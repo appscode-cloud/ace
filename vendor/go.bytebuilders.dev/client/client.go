@@ -1,0 +1,198 @@
+/*
+Copyright 2020 AppsCode Inc.
+Copyright 2014 The Gogs Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package client
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+)
+
+var jsonHeader = http.Header{"Content-Type": []string{"application/json;charset=UTF-8"}}
+
+// Version return the library version
+func Version() string {
+	return "v0.0.1"
+}
+
+// Client represents a ByteBuilders api client
+type Client struct {
+	url         string
+	accessToken string
+	client      *http.Client
+	org         string
+	username    string
+	password    string
+}
+
+// NewClient initializes and returns a API client.
+func NewClient(baseURL ...string) *Client {
+	url := "https://byte.builders"
+	if len(baseURL) > 0 {
+		url = baseURL[0]
+	}
+	return &Client{
+		url:    strings.TrimSuffix(url, "/"),
+		client: &http.Client{},
+	}
+}
+
+func (c *Client) WithAccessToken(accessToken string) *Client {
+	c.accessToken = accessToken
+	return c
+}
+
+func (c *Client) WithBasicAuth(username, password string) *Client {
+	c.username = username
+	c.password = password
+	return c
+}
+
+func (c *Client) WithOrganization(org string) *Client {
+	c.org = org
+	return c
+}
+
+// NewClientWithHTTP creates an API client with a custom http client
+func NewClientWithHTTP(httpClient *http.Client, baseURL ...string) *Client {
+	client := NewClient(baseURL...)
+	client.client = httpClient
+	return client
+}
+
+// SetHTTPClient replaces default http.Client with user given one.
+func (c *Client) SetHTTPClient(client *http.Client) {
+	c.client = client
+}
+
+func (c *Client) doRequest(method, path string, header http.Header, body io.Reader) (*http.Response, error) {
+	path = strings.TrimPrefix(path, "/")
+	req, err := http.NewRequest(method, c.url+"/api/v1/"+path, body)
+	if err != nil {
+		return nil, err
+	}
+	if len(c.accessToken) != 0 {
+		req.Header.Set("Authorization", "token "+c.accessToken)
+	}
+	if c.username != "" && c.password != "" {
+		req.SetBasicAuth(c.username, c.password)
+	}
+	for k, v := range header {
+		req.Header[k] = v
+	}
+
+	return c.client.Do(req)
+}
+
+var (
+	ErrUnAuthorized   = errors.New("401 Unauthorized")
+	ErrForbidden      = errors.New("403 Forbidden")
+	ErrNotFound       = errors.New("404 Not Found")
+	ErrStatusConflict = errors.New("409 Conflict")
+)
+
+func (c *Client) getResponse(method, path string, header http.Header, body io.Reader) ([]byte, error) {
+	resp, err := c.doRequest(method, path, header, body)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusUnauthorized:
+		return nil, ErrUnAuthorized
+	case http.StatusForbidden:
+		return nil, ErrForbidden
+	case http.StatusNotFound:
+		return nil, ErrNotFound
+	case http.StatusConflict:
+		return nil, ErrStatusConflict
+	case http.StatusUnprocessableEntity:
+		return nil, fmt.Errorf("422 Unprocessable Entity: %s", string(data))
+	}
+
+	if resp.StatusCode/100 != 2 {
+		errMap := make(map[string]interface{})
+		if err = json.Unmarshal(data, &errMap); err != nil {
+			// when the JSON can't be parsed, data was probably empty or a plain string,
+			// so we try to return a helpful error anyway
+			return nil, fmt.Errorf("Unknown API Error: %d %s", resp.StatusCode, string(data))
+		}
+		return nil, errors.New(errMap["message"].(string))
+	}
+
+	return data, nil
+}
+
+func (c *Client) getParsedResponse(method, path string, header http.Header, body io.Reader, obj interface{}) error {
+	data, err := c.getResponse(method, path, header, body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, obj)
+}
+
+func (c *Client) getStatusCode(method, path string, header http.Header, body io.Reader) (int, error) {
+	resp, err := c.doRequest(method, path, header, body)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode, nil
+}
+
+func (c *Client) getOrganization() (string, error) {
+	org := c.org
+	if org == "" {
+		user, err := c.GetCurrentUser()
+		if err != nil {
+			return "", fmt.Errorf("organization name wasn't provided. Automatic user detection failed with error: %w", err)
+		}
+		org = user.UserName
+	}
+	return org, nil
+}
+
+type queryParams struct {
+	key   string
+	value string
+}
+
+func setQueryParams(apiPath string, params []queryParams) (string, error) {
+	u, err := url.Parse(apiPath)
+	if err != nil {
+		return "", err
+	}
+	q := u.Query()
+	for i := range params {
+		q.Set(params[i].key, params[i].value)
+	}
+
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
