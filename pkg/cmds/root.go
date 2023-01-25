@@ -19,9 +19,11 @@ package cmds
 import (
 	"github.com/spf13/cobra"
 	"go.bytebuilders.dev/ace-cli/pkg/cmds/cluster"
+	cmdconfig "go.bytebuilders.dev/ace-cli/pkg/cmds/config"
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
 	v "gomodules.xyz/x/version"
+	"os"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -35,6 +37,7 @@ func NewRootCmd() *cobra.Command {
 	f := &config.Factory{
 		Client: aceClient,
 	}
+	rootCmd.AddCommand(cmdconfig.NewCmdConfig())
 	rootCmd.AddCommand(cluster.NewCmdCluster(f))
 	rootCmd.AddCommand(v.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdCompletion())
@@ -43,11 +46,20 @@ func NewRootCmd() *cobra.Command {
 }
 
 func aceClient() (*ace.Client, error) {
-	cfg, err := config.LoadConfig()
+	cfg, err := config.GetContext()
 	if err != nil {
 		return nil, err
 	}
-	client := ace.NewClient(cfg.Endpoint).WithBasicAuth(cfg.BasicAuth.Username, cfg.BasicAuth.Password)
+	client := ace.NewClient(cfg.Endpoint)
+
+	if basicAuthCredentialsSet() {
+		client = client.WithBasicAuth(os.Getenv(config.BB_USERNAME), os.Getenv(config.BB_PASSWORD))
+	}
 
 	return client, err
+}
+
+func basicAuthCredentialsSet() bool {
+	return os.Getenv(config.BB_USERNAME) != "" &&
+		os.Getenv(config.BB_PASSWORD) != ""
 }
