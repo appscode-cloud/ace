@@ -6,17 +6,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
 	"sigs.k8s.io/yaml"
 )
 
 const (
 	configVersion = "v1"
-
-	BB_USERNAME = "BB_USERNAME"
-	BB_PASSWORD = "BB_PASSWORD"
 )
 
 var CurrentContext string
+
+var (
+	ErrContextNotFound = errors.New("context does not exist")
+)
 
 type Config struct {
 	Version        string    `yaml:"version,omitempty"`
@@ -25,10 +27,10 @@ type Config struct {
 }
 
 type Context struct {
-	Name     string       `yaml:"name"`
-	Endpoint string       `yaml:"endpoint,omitempty"`
-	Token    string       `yaml:"token,omitempty"`
-	Cookie   *http.Cookie `yaml:"cookie,omitempty"`
+	Name     string        `yaml:"name"`
+	Endpoint string        `yaml:"endpoint,omitempty"`
+	Token    string        `yaml:"token,omitempty"`
+	Cookies  []http.Cookie `yaml:"cookies,omitempty"`
 }
 
 func ReadConfig() (Config, error) {
@@ -58,10 +60,7 @@ func GetContext() (*Context, error) {
 		return nil, err
 	}
 
-	curContext := config.CurrentContext
-	if CurrentContext != "" {
-		curContext = CurrentContext
-	}
+	curContext := config.getCurrentContext()
 	for i := range config.Contexts {
 		if config.Contexts[i].Name == curContext {
 			return &config.Contexts[i], nil
@@ -72,38 +71,81 @@ func GetContext() (*Context, error) {
 }
 
 func SetContext(ctx Context) error {
-	config, err := ReadConfig()
+	cfg, err := ReadConfig()
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		config = defaultConfig()
+		return err
 	}
-	contextExist := false
-	for i := range config.Contexts {
-		if config.Contexts[i].Name == ctx.Name {
-			contextExist = true
-			config.Contexts[i] = updateContext(config.Contexts[i], ctx)
-		}
+	contextExist, idx := cfg.isContextExist(ctx.Name)
+
+	if contextExist {
+		cfg.Contexts[idx] = updateContext(cfg.Contexts[idx], ctx)
+	} else {
+		cfg.Contexts = append(cfg.Contexts, ctx)
 	}
+	cfg.CurrentContext = ctx.Name
+	return cfg.save()
+}
+
+func DeleteContext(ctx string) error {
+	cfg, err := ReadConfig()
+	if err != nil {
+		return err
+	}
+	if ctx == cfg.CurrentContext {
+		return fmt.Errorf("can't delete the context. Reason: %q is set as current context", ctx)
+	}
+	contextExist, idx := cfg.isContextExist(ctx)
 	if !contextExist {
-		config.Contexts = append(config.Contexts, ctx)
+		return ErrContextNotFound
 	}
-	return config.save()
+	length := len(cfg.Contexts)
+	cfg.Contexts[idx] = cfg.Contexts[length-1]
+	cfg.Contexts = cfg.Contexts[:length-1]
+	return cfg.save()
+}
+
+func SetCurrentContext(ctx string) error {
+	cfg, err := ReadConfig()
+	if err != nil {
+		return err
+	}
+	contextExist, _ := cfg.isContextExist(ctx)
+	if !contextExist {
+		return ErrContextNotFound
+	}
+	cfg.CurrentContext = ctx
+	return cfg.save()
 }
 
 func (cfg *Config) MaskSensitiveData() {
 	for i := range cfg.Contexts {
-		cfg.Contexts[i].Cookie = nil
+		cfg.Contexts[i].Cookies = nil
 	}
 }
+
+func (c *Config) getCurrentContext() string {
+	if CurrentContext != "" {
+		return CurrentContext
+	}
+	return c.CurrentContext
+}
+
+func (cfg *Config) isContextExist(ctx string) (bool, int) {
+	for i := range cfg.Contexts {
+		if cfg.Contexts[i].Name == ctx {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
 func (cfg *Config) save() error {
 	configFile, err := getConfigFilepath()
 	if err != nil {
 		return err
 	}
 	if _, err := os.Stat(configFile); err != nil && errors.Is(err, os.ErrNotExist) {
-		err := os.MkdirAll(configFile, 0664)
+		err := os.MkdirAll(filepath.Dir(configFile), 0700)
 		if err != nil {
 			return err
 		}
@@ -113,7 +155,7 @@ func (cfg *Config) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configFile, data, 0664)
+	return os.WriteFile(configFile, data, 0700)
 }
 
 func getConfigFilepath() (string, error) {
@@ -148,8 +190,8 @@ func updateContext(cur, new Context) Context {
 	if new.Token != "" {
 		cur.Token = new.Token
 	}
-	if new.Cookie != nil {
-		cur.Cookie = new.Cookie
+	if new.Cookies != nil {
+		cur.Cookies = new.Cookies
 	}
 	return cur
 }

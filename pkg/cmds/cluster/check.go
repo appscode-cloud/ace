@@ -9,7 +9,7 @@ import (
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 )
 
-func NewCmdCheckClusterExistence(f *config.Factory) *cobra.Command {
+func newCmdCheck(f *config.Factory) *cobra.Command {
 	opts := ace.ProviderOptions{}
 	cmd := &cobra.Command{
 		Use:               "check",

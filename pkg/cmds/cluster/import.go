@@ -14,7 +14,7 @@ type importOptions struct {
 	installFluxCD bool
 }
 
-func NewCmdImportCluster(f *config.Factory) *cobra.Command {
+func newCmdImport(f *config.Factory) *cobra.Command {
 	opts := importOptions{}
 	cmd := &cobra.Command{
 		Use:               "import",

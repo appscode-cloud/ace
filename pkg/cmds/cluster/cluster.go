@@ -42,13 +42,13 @@ func NewCmdCluster(f *config.Factory) *cobra.Command {
 		Short:             "Manage clusters in ACE",
 		DisableAutoGenTag: true,
 	}
-	cmd.AddCommand(NewCmdListClusters(f))
-	cmd.AddCommand(NewCmdCheckClusterExistence(f))
-	cmd.AddCommand(NewCmdImportCluster(f))
-	cmd.AddCommand(NewCmdGetCluster(f))
-	cmd.AddCommand(NewCmdConnectCluster(f))
-	cmd.AddCommand(NewCmdReconfigureCluster(f))
-	cmd.AddCommand(NewCmdRemoveCluster(f))
+	cmd.AddCommand(newCmdList(f))
+	cmd.AddCommand(newCmdCheck(f))
+	cmd.AddCommand(newCmdImport(f))
+	cmd.AddCommand(newCmdGet(f))
+	cmd.AddCommand(newCmdConnect(f))
+	cmd.AddCommand(newCmdReconfigure(f))
+	cmd.AddCommand(newCmdRemove(f))
 
 	cmd.PersistentFlags().StringVarP(&OutputFormat, "output", "o", "", "Output format (any of json,yaml,table). Default is table.")
 	return cmd

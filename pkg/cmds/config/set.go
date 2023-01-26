@@ -14,7 +14,7 @@ func newCmdSet() *cobra.Command {
 		Short:             "Create a new context or update existing context in CLI configuration",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := setContext(ctx)
+			err := config.SetContext(ctx)
 			if err != nil {
 				return err
 			}
@@ -28,8 +28,4 @@ func newCmdSet() *cobra.Command {
 	cmd.Flags().StringVar(&ctx.Token, "token", "", "Token for this endpoint")
 
 	return cmd
-}
-
-func setContext(ctx config.Context) error {
-	return config.SetContext(ctx)
 }

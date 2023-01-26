@@ -10,7 +10,7 @@ import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 )
 
-func NewCmdRemoveCluster(f *config.Factory) *cobra.Command {
+func newCmdRemove(f *config.Factory) *cobra.Command {
 	var clusterName string
 	var removeFluxCD bool
 	cmd := &cobra.Command{

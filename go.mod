@@ -4,12 +4,14 @@ go 1.18
 
 require (
 	github.com/spf13/cobra v1.5.0
-	go.bytebuilders.dev/client v0.0.0-20230124095651-29efc0069a0c
+	go.bytebuilders.dev/client v0.0.0-20230126121346-b7d977da07d4
 	go.bytebuilders.dev/resource-model v0.0.3-0.20230123121048-fde4d672c8dc
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.25.3
 	k8s.io/klog/v2 v2.80.1
+	kubeops.dev/installer v0.0.0-20230123175024-30db39f06568
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -59,7 +61,6 @@ require (
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.25.3 // indirect
 	k8s.io/apiextensions-apiserver v0.25.3 // indirect

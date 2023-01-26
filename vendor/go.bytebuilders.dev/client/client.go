@@ -42,6 +42,7 @@ type Client struct {
 	org         string
 	username    string
 	password    string
+	cookies     []http.Cookie
 }
 
 // NewClient initializes and returns a API client.
@@ -64,6 +65,11 @@ func (c *Client) WithAccessToken(accessToken string) *Client {
 func (c *Client) WithBasicAuth(username, password string) *Client {
 	c.username = username
 	c.password = password
+	return c
+}
+
+func (c *Client) WithCookies(cookies []http.Cookie) *Client {
+	c.cookies = cookies
 	return c
 }
 
@@ -96,11 +102,25 @@ func (c *Client) doRequest(method, path string, header http.Header, body io.Read
 	if c.username != "" && c.password != "" {
 		req.SetBasicAuth(c.username, c.password)
 	}
+	if c.cookies != nil {
+		c.addCookies(req)
+	}
 	for k, v := range header {
 		req.Header[k] = v
 	}
 
 	return c.client.Do(req)
+}
+
+func (c *Client) addCookies(req *http.Request) {
+	var csrfToken string
+	for i := range c.cookies {
+		if c.cookies[i].Name == "_csrf" {
+			csrfToken = c.cookies[i].Value
+		}
+		req.AddCookie(&c.cookies[i])
+	}
+	req.Header.Set("X-Csrf-Token", csrfToken)
 }
 
 var (
@@ -122,29 +142,9 @@ func (c *Client) getResponse(method, path string, header http.Header, body io.Re
 		return nil, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusUnauthorized:
-		return nil, ErrUnAuthorized
-	case http.StatusForbidden:
-		return nil, ErrForbidden
-	case http.StatusNotFound:
-		return nil, ErrNotFound
-	case http.StatusConflict:
-		return nil, ErrStatusConflict
-	case http.StatusUnprocessableEntity:
-		return nil, fmt.Errorf("422 Unprocessable Entity: %s", string(data))
+	if err := parseStatusCode(resp.StatusCode, data); err != nil {
+		return nil, err
 	}
-
-	if resp.StatusCode/100 != 2 {
-		errMap := make(map[string]interface{})
-		if err = json.Unmarshal(data, &errMap); err != nil {
-			// when the JSON can't be parsed, data was probably empty or a plain string,
-			// so we try to return a helpful error anyway
-			return nil, fmt.Errorf("Unknown API Error: %d %s", resp.StatusCode, string(data))
-		}
-		return nil, errors.New(errMap["message"].(string))
-	}
-
 	return data, nil
 }
 
@@ -156,6 +156,29 @@ func (c *Client) getParsedResponse(method, path string, header http.Header, body
 	return json.Unmarshal(data, obj)
 }
 
+func (c *Client) getResponseWithCookies(method, path string, header http.Header, body io.Reader) ([]byte, []http.Cookie, error) {
+	resp, err := c.doRequest(method, path, header, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := parseStatusCode(resp.StatusCode, data); err != nil {
+		return nil, nil, err
+	}
+	var cookies []http.Cookie
+	for _, c := range resp.Cookies() {
+		cookie := *c
+		cookies = append(cookies, cookie)
+	}
+	return data, cookies, nil
+}
+
 func (c *Client) getStatusCode(method, path string, header http.Header, body io.Reader) (int, error) {
 	resp, err := c.doRequest(method, path, header, body)
 	if err != nil {
@@ -164,6 +187,33 @@ func (c *Client) getStatusCode(method, path string, header http.Header, body io.
 	defer resp.Body.Close()
 
 	return resp.StatusCode, nil
+}
+
+func parseStatusCode(statusCode int, data []byte) error {
+	switch statusCode {
+	case http.StatusUnauthorized:
+		return ErrUnAuthorized
+	case http.StatusForbidden:
+		return ErrForbidden
+	case http.StatusNotFound:
+		return ErrNotFound
+	case http.StatusConflict:
+		return ErrStatusConflict
+	case http.StatusUnprocessableEntity:
+		return fmt.Errorf("422 Unprocessable Entity: %s", string(data))
+	}
+
+	if statusCode/100 != 2 {
+		errMap := make(map[string]interface{})
+		if err := json.Unmarshal(data, &errMap); err != nil {
+			// when the JSON can't be parsed, data was probably empty or a plain string,
+			// so we try to return a helpful error anyway
+			return fmt.Errorf("Unknown API Error: %d %s", statusCode, string(data))
+		}
+		return errors.New(errMap["message"].(string))
+	}
+
+	return nil
 }
 
 func (c *Client) getOrganization() (string, error) {

@@ -103,6 +103,7 @@ github.com/go-openapi/swag v0.19.5/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh
 github.com/go-openapi/swag v0.19.15 h1:D2NRCBzS9/pEY3gP9Nl8aDqGUcPFrwG2p+CNFrLyrCM=
 github.com/go-openapi/swag v0.19.15/go.mod h1:QYRuS/SOXUCsnplDa677K7+DxSOj6IPNl/eQntq43wQ=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
+github.com/gobeam/stringy v0.0.5 h1:TvxQGSAqr/qF0SBVxa8Q67WWIo7bCWS0bM101WOd52g=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zVXpSg4=
 github.com/gogo/protobuf v1.3.2 h1:Ov1cvc58UF3b5XjBnZv7+opcTcQFZebYjWzi34vdm4Q=
@@ -225,7 +226,7 @@ github.com/mailru/easyjson v0.7.6/go.mod h1:xzfreul335JAWq5oZzymOObrkdz5UnU4kGfJ
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.12 h1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
-github.com/mattn/go-isatty v0.0.14 h1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=
+github.com/mattn/go-isatty v0.0.16 h1:bq3VjFmv/sOjHtdEhmkEV4x1AJtvUvOJ2PFAZ5+peKQ=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
@@ -319,8 +320,8 @@ github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-go.bytebuilders.dev/client v0.0.0-20230124095651-29efc0069a0c h1:/PZ3uO+a8zyO5+O2iCHT0xjL97foinGIcm2MKqqIYsI=
-go.bytebuilders.dev/client v0.0.0-20230124095651-29efc0069a0c/go.mod h1:oh9HFgkUsOCmndLZjBgY+YXp1/SlGchZlSVpu9uCGK0=
+go.bytebuilders.dev/client v0.0.0-20230126121346-b7d977da07d4 h1:6Zvj0TKvDflcswKFTCDR6CTSGYiGWU7sqxeMRjxpQ3E=
+go.bytebuilders.dev/client v0.0.0-20230126121346-b7d977da07d4/go.mod h1:oh9HFgkUsOCmndLZjBgY+YXp1/SlGchZlSVpu9uCGK0=
 go.bytebuilders.dev/resource-model v0.0.3-0.20230123121048-fde4d672c8dc h1:VoxeLum5oT6VitN1eK8eAYKHB2ASLdqJ0xJPdcSIWs4=
 go.bytebuilders.dev/resource-model v0.0.3-0.20230123121048-fde4d672c8dc/go.mod h1:x0fe4N+nSxQuDoTPQSKz1O+NfB/gEFDeDUxGzXMNX5E=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
@@ -666,6 +667,9 @@ k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 h1:H9TCJUUx+2VA0ZiD9lvtaX8fthFsM
 k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 kmodules.xyz/client-go v0.25.6 h1:59mMNoanKrqOFYqDMtqYU5caFxd+7YrfNqpvyKYWqNE=
 kmodules.xyz/client-go v0.25.6/go.mod h1:NgLAVr+IEAFpI9g7FhZF5qG0SG+SBADxknWu5jp0m8M=
+kmodules.xyz/schema-checker v0.4.1 h1:V5UEjR6UMAXf307lTgw+9rDRfHLTNA8g/q9DngqYI9M=
+kubeops.dev/installer v0.0.0-20230123175024-30db39f06568 h1:7oJ3sxvEOTd6qpLblWVXAuu4QAbbJmbLst4/X6HxvMk=
+kubeops.dev/installer v0.0.0-20230123175024-30db39f06568/go.mod h1:vD7WIZbLlbtvjkhjXvdc4AMu9RISGpz03uQPEsQinrs=
 kubepack.dev/kubepack v0.5.2 h1:VRJl1NzTY9mIKWrc92UnD/fU6gu3VvM9nVWTp/yTC0c=
 kubepack.dev/kubepack v0.5.2/go.mod h1:ot9H9cmGibzr4bC4t0nvReqc2gPk6oXbTzs+dRxcLhs=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=

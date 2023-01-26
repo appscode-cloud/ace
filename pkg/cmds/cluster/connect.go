@@ -11,7 +11,7 @@ import (
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 )
 
-func NewCmdConnectCluster(f *config.Factory) *cobra.Command {
+func newCmdConnect(f *config.Factory) *cobra.Command {
 	var clusterName, credential string
 	cmd := &cobra.Command{
 		Use:               "connect",

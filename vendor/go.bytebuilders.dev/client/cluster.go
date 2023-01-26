@@ -22,6 +22,10 @@ type ProviderOptions struct {
 	ClusterID  string
 }
 
+type ClusterListOptions struct {
+	Provider string
+}
+
 func (c *Client) CheckClusterExistence(opts ProviderOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
@@ -76,12 +80,19 @@ func (c *Client) ImportCluster(basicInfo ClusterBasicInfo, opts ProviderOptions,
 	return &cluster, nil
 }
 
-func (c *Client) ListClusters() (*v1alpha1.ClusterInfoList, error) {
+func (c *Client) ListClusters(listOptions *ClusterListOptions) (*v1alpha1.ClusterInfoList, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err
 	}
 	apiPath := fmt.Sprintf("/clustersv2/%s", org)
+
+	if listOptions != nil {
+		apiPath, err = setQueryParams(apiPath, listOptions.FormatAsQueryParams())
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	var clusters v1alpha1.ClusterInfoList
 	err = c.getParsedResponse(http.MethodGet, apiPath, jsonHeader, nil, &clusters)
@@ -184,4 +195,12 @@ func getProviderSpecificAPIPath(org string, opts ProviderOptions, suffix string)
 
 func lower(s string) string {
 	return strings.ToLower(s)
+}
+
+func (opts *ClusterListOptions) FormatAsQueryParams() []queryParams {
+	var params []queryParams
+	if opts.Provider != "" {
+		params = append(params, queryParams{key: "provider", value: opts.Provider})
+	}
+	return params
 }

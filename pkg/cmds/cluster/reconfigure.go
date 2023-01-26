@@ -10,7 +10,7 @@ import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 )
 
-func NewCmdReconfigureCluster(f *config.Factory) *cobra.Command {
+func newCmdReconfigure(f *config.Factory) *cobra.Command {
 	var clusterName string
 	var installFluxCD bool
 	cmd := &cobra.Command{

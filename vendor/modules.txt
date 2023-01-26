@@ -101,7 +101,7 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/client v0.0.0-20230124095651-29efc0069a0c
+# go.bytebuilders.dev/client v0.0.0-20230126121346-b7d977da07d4
 ## explicit; go 1.19
 go.bytebuilders.dev/client
 go.bytebuilders.dev/client/api
@@ -467,6 +467,10 @@ kmodules.xyz/client-go
 kmodules.xyz/client-go/apiextensions
 kmodules.xyz/client-go/apiextensions/v1
 kmodules.xyz/client-go/meta
+# kubeops.dev/installer v0.0.0-20230123175024-30db39f06568
+## explicit; go 1.18
+kubeops.dev/installer/apis/installer
+kubeops.dev/installer/apis/installer/v1alpha1
 # kubepack.dev/kubepack v0.5.2
 ## explicit; go 1.18
 kubepack.dev/kubepack/apis

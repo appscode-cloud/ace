@@ -12,7 +12,7 @@ import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 )
 
-func NewCmdGetCluster(f *config.Factory) *cobra.Command {
+func newCmdGet(f *config.Factory) *cobra.Command {
 	var clusterName string
 	cmd := &cobra.Command{
 		Use:               "get",

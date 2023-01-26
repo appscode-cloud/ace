@@ -18,12 +18,12 @@ package cmds
 
 import (
 	"github.com/spf13/cobra"
+	"go.bytebuilders.dev/ace-cli/pkg/cmds/auth"
 	"go.bytebuilders.dev/ace-cli/pkg/cmds/cluster"
 	cmdconfig "go.bytebuilders.dev/ace-cli/pkg/cmds/config"
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
 	v "gomodules.xyz/x/version"
-	"os"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -33,12 +33,15 @@ func NewRootCmd() *cobra.Command {
 		Long:              `A cli to interact with ACE (AppsCode Container Engine) platform`,
 		DisableAutoGenTag: true,
 	}
+	rootCmd.PersistentFlags().StringVar(&config.CurrentContext, "context", "", "Use this as current context instead of one from configuration file")
 
 	f := &config.Factory{
 		Client: aceClient,
 	}
 	rootCmd.AddCommand(cmdconfig.NewCmdConfig())
 	rootCmd.AddCommand(cluster.NewCmdCluster(f))
+	rootCmd.AddCommand(auth.NewCmdAuth())
+
 	rootCmd.AddCommand(v.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdCompletion())
 
@@ -52,14 +55,12 @@ func aceClient() (*ace.Client, error) {
 	}
 	client := ace.NewClient(cfg.Endpoint)
 
-	if basicAuthCredentialsSet() {
-		client = client.WithBasicAuth(os.Getenv(config.BB_USERNAME), os.Getenv(config.BB_PASSWORD))
+	if cred := auth.GetBasicAuthCredFromEnv(); cred != nil {
+		client = client.WithBasicAuth(cred.Username, cred.Password)
+	}
+	if cfg.Cookies != nil {
+		client = client.WithCookies(cfg.Cookies)
 	}
 
 	return client, err
-}
-
-func basicAuthCredentialsSet() bool {
-	return os.Getenv(config.BB_USERNAME) != "" &&
-		os.Getenv(config.BB_PASSWORD) != ""
 }
