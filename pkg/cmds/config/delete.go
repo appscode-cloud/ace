@@ -3,8 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
+
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+
+	"github.com/spf13/cobra"
 )
 
 func newCmdDelete() *cobra.Command {

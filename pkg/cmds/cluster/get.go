@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
-
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
-	"go.bytebuilders.dev/ace-cli/pkg/config"
 )
 
 func newCmdGet(f *config.Factory) *cobra.Command {
@@ -39,5 +38,7 @@ func getCluster(f *config.Factory, name string) (*v1alpha1.ClusterInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.GetCluster(name)
+	return c.GetCluster(ace.ClusterGetOptions{
+		Name: name,
+	})
 }

@@ -16,9 +16,7 @@ const (
 
 var CurrentContext string
 
-var (
-	ErrContextNotFound = errors.New("context does not exist")
-)
+var ErrContextNotFound = errors.New("context does not exist")
 
 type Config struct {
 	Version        string    `yaml:"version,omitempty"`
@@ -145,7 +143,7 @@ func (cfg *Config) save() error {
 		return err
 	}
 	if _, err := os.Stat(configFile); err != nil && errors.Is(err, os.ErrNotExist) {
-		err := os.MkdirAll(filepath.Dir(configFile), 0700)
+		err := os.MkdirAll(filepath.Dir(configFile), 0o700)
 		if err != nil {
 			return err
 		}
@@ -155,7 +153,7 @@ func (cfg *Config) save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configFile, data, 0700)
+	return os.WriteFile(configFile, data, 0o700)
 }
 
 func getConfigFilepath() (string, error) {

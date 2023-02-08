@@ -2,13 +2,14 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
-	"kubeops.dev/installer/apis/installer/v1alpha1"
 
 	"github.com/spf13/cobra"
+	"kubeops.dev/installer/apis/installer/v1alpha1"
 )
 
 func newCmdLogin() *cobra.Command {
@@ -53,6 +54,11 @@ func login(cred v1alpha1.BasicAuth) error {
 	if err != nil {
 		return err
 	}
-	ctx.Cookies = cookies
+	ctx.Cookies = make([]http.Cookie, 0)
+	for i := range cookies {
+		if cookies[i].Name == csrfCookie || cookies[i].Name == sessionCookie {
+			ctx.Cookies = append(ctx.Cookies, cookies[i])
+		}
+	}
 	return config.SetContext(*ctx)
 }

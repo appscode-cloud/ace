@@ -2,12 +2,12 @@ package cluster
 
 import (
 	"fmt"
-	ace "go.bytebuilders.dev/client"
 
+	"go.bytebuilders.dev/ace-cli/pkg/config"
+	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
-	"go.bytebuilders.dev/ace-cli/pkg/config"
 )
 
 func newCmdList(f *config.Factory) *cobra.Command {
@@ -43,7 +43,9 @@ func listClusters(f *config.Factory, opts *ace.ClusterListOptions) (*v1alpha1.Cl
 		return nil, err
 	}
 	for i := range clusters.Items {
-		cluster, err := c.GetCluster(clusters.Items[i].Spec.Name)
+		cluster, err := c.GetCluster(ace.ClusterGetOptions{
+			Name: clusters.Items[i].Spec.Name,
+		})
 		if err != nil {
 			return nil, err
 		}

@@ -22,8 +22,9 @@ type ProviderOptions struct {
 	ClusterID  string
 }
 
-type ClusterListOptions struct {
-	Provider string
+type ComponentOptions struct {
+	FluxCD        bool
+	LicenseServer bool
 }
 
 func (c *Client) CheckClusterExistence(opts ProviderOptions) (*v1alpha1.ClusterInfo, error) {
@@ -50,24 +51,31 @@ func (c *Client) CheckClusterExistence(opts ProviderOptions) (*v1alpha1.ClusterI
 	return &cluster, nil
 }
 
-func (c *Client) ImportCluster(basicInfo ClusterBasicInfo, opts ProviderOptions, installFluxCD bool) (*v1alpha1.ClusterInfo, error) {
+type ClusterImportOptions struct {
+	BasicInfo  ClusterBasicInfo
+	Provider   ProviderOptions
+	Components ComponentOptions
+}
+
+func (c *Client) ImportCluster(opts ClusterImportOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err
 	}
-	apiPath, err := getProviderSpecificAPIPath(org, opts, "import")
+	apiPath, err := getProviderSpecificAPIPath(org, opts.Provider, "import")
 	if err != nil {
 		return nil, err
 	}
 	apiPath, err = setQueryParams(apiPath, []queryParams{
-		{key: "credential", value: opts.Credential},
-		{key: "install-fluxcd", value: fmt.Sprintf("%v", installFluxCD)},
+		{key: "credential", value: opts.Provider.Credential},
+		{key: "install-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
+		{key: "install-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := json.Marshal(basicInfo)
+	body, err := json.Marshal(opts.BasicInfo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal cluster basic info. err: %w", err)
 	}
@@ -80,6 +88,10 @@ func (c *Client) ImportCluster(basicInfo ClusterBasicInfo, opts ProviderOptions,
 	return &cluster, nil
 }
 
+type ClusterListOptions struct {
+	Provider string
+}
+
 func (c *Client) ListClusters(listOptions *ClusterListOptions) (*v1alpha1.ClusterInfoList, error) {
 	org, err := c.getOrganization()
 	if err != nil {
@@ -88,7 +100,7 @@ func (c *Client) ListClusters(listOptions *ClusterListOptions) (*v1alpha1.Cluste
 	apiPath := fmt.Sprintf("/clustersv2/%s", org)
 
 	if listOptions != nil {
-		apiPath, err = setQueryParams(apiPath, listOptions.FormatAsQueryParams())
+		apiPath, err = setQueryParams(apiPath, listOptions.formatAsQueryParams())
 		if err != nil {
 			return nil, err
 		}
@@ -102,12 +114,24 @@ func (c *Client) ListClusters(listOptions *ClusterListOptions) (*v1alpha1.Cluste
 	return &clusters, nil
 }
 
-func (c *Client) GetCluster(clusterName string) (*v1alpha1.ClusterInfo, error) {
+func (opts *ClusterListOptions) formatAsQueryParams() []queryParams {
+	var params []queryParams
+	if opts.Provider != "" {
+		params = append(params, queryParams{key: "provider", value: opts.Provider})
+	}
+	return params
+}
+
+type ClusterGetOptions struct {
+	Name string
+}
+
+func (c *Client) GetCluster(opts ClusterGetOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err
 	}
-	apiPath := fmt.Sprintf("/clustersv2/%s/%s/status", org, clusterName)
+	apiPath := fmt.Sprintf("/clustersv2/%s/%s/status", org, opts.Name)
 
 	var cluster v1alpha1.ClusterInfo
 	err = c.getParsedResponse(http.MethodGet, apiPath, jsonHeader, nil, &cluster)
@@ -117,14 +141,19 @@ func (c *Client) GetCluster(clusterName string) (*v1alpha1.ClusterInfo, error) {
 	return &cluster, nil
 }
 
-func (c *Client) ConnectCluster(clusterName, credential string) (*v1alpha1.ClusterInfo, error) {
+type ClusterConnectOptions struct {
+	Name       string
+	Credential string
+}
+
+func (c *Client) ConnectCluster(opts ClusterConnectOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err
 	}
-	apiPath := fmt.Sprintf("/clustersv2/%s/%s/connect", org, clusterName)
+	apiPath := fmt.Sprintf("/clustersv2/%s/%s/connect", org, opts.Name)
 	apiPath, err = setQueryParams(apiPath, []queryParams{
-		{key: "credential", value: credential},
+		{key: "credential", value: opts.Credential},
 	})
 	if err != nil {
 		return nil, err
@@ -138,14 +167,20 @@ func (c *Client) ConnectCluster(clusterName, credential string) (*v1alpha1.Clust
 	return &cluster, nil
 }
 
-func (c *Client) ReconfigureCluster(clusterName string, installFluxCD bool) (*v1alpha1.ClusterInfo, error) {
+type ClusterReconfigureOptions struct {
+	Name       string
+	Components ComponentOptions
+}
+
+func (c *Client) ReconfigureCluster(opts ClusterReconfigureOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err
 	}
-	apiPath := fmt.Sprintf("/clustersv2/%s/%s/reconfigure", org, clusterName)
+	apiPath := fmt.Sprintf("/clustersv2/%s/%s/reconfigure", org, opts.Name)
 	apiPath, err = setQueryParams(apiPath, []queryParams{
-		{key: "install-fluxcd", value: fmt.Sprintf("%v", installFluxCD)},
+		{key: "install-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
+		{key: "install-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
 	})
 	if err != nil {
 		return nil, err
@@ -159,14 +194,20 @@ func (c *Client) ReconfigureCluster(clusterName string, installFluxCD bool) (*v1
 	return &cluster, nil
 }
 
-func (c *Client) RemoveCluster(clusterName string, removeFluxCD bool) error {
+type ClusterRemovalOptions struct {
+	Name       string
+	Components ComponentOptions
+}
+
+func (c *Client) RemoveCluster(opts ClusterRemovalOptions) error {
 	org, err := c.getOrganization()
 	if err != nil {
 		return err
 	}
-	apiPath := fmt.Sprintf("/clustersv2/%s/%s/remove", org, clusterName)
+	apiPath := fmt.Sprintf("/clustersv2/%s/%s/remove", org, opts.Name)
 	apiPath, err = setQueryParams(apiPath, []queryParams{
-		{key: "remove-fluxcd", value: fmt.Sprintf("%v", removeFluxCD)},
+		{key: "remove-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
+		{key: "remove-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
 	})
 	if err != nil {
 		return err
@@ -195,12 +236,4 @@ func getProviderSpecificAPIPath(org string, opts ProviderOptions, suffix string)
 
 func lower(s string) string {
 	return strings.ToLower(s)
-}
-
-func (opts *ClusterListOptions) FormatAsQueryParams() []queryParams {
-	var params []queryParams
-	if opts.Provider != "" {
-		params = append(params, queryParams{key: "provider", value: opts.Provider})
-	}
-	return params
 }

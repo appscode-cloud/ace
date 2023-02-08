@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/spf13/cobra"
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+
+	"github.com/spf13/cobra"
 )
 
 func newCmdUse() *cobra.Command {

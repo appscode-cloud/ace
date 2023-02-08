@@ -3,10 +3,11 @@ package cluster
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
+
+	"github.com/spf13/cobra"
 )
 
 func newCmdCheck(f *config.Factory) *cobra.Command {

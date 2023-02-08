@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+
+	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
 

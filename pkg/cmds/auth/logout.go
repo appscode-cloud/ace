@@ -2,10 +2,12 @@ package auth
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
+	"net/http"
+
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
-	"net/http"
+
+	"github.com/spf13/cobra"
 )
 
 func newCmdLogout() *cobra.Command {

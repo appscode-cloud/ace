@@ -21,6 +21,9 @@ func NewCmdAuth() *cobra.Command {
 const (
 	BB_USERNAME = "BB_USERNAME"
 	BB_PASSWORD = "BB_PASSWORD"
+
+	csrfCookie    = "_csrf"
+	sessionCookie = "i_like_bytebuilders"
 )
 
 func GetBasicAuthCredFromEnv() *v1alpha1.BasicAuth {

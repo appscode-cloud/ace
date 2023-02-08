@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/spf13/cobra v1.5.0
-	go.bytebuilders.dev/client v0.0.0-20230126121346-b7d977da07d4
+	go.bytebuilders.dev/client v0.0.0-20230208104042-c866c7d9aecd
 	go.bytebuilders.dev/resource-model v0.0.3-0.20230123121048-fde4d672c8dc
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14

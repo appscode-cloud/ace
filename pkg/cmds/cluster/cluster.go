@@ -24,14 +24,13 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"sigs.k8s.io/yaml"
-
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/yaml"
 )
 
 var OutputFormat string
@@ -57,7 +56,9 @@ func NewCmdCluster(f *config.Factory) *cobra.Command {
 func waitForClusterToBeReady(c *ace.Client, clusterName string) error {
 	fmt.Printf("Waiting for cluster %q to be ready.....\n", clusterName)
 	return wait.PollImmediate(2*time.Second, 5*time.Minute, func() (done bool, err error) {
-		cluster, err := c.GetCluster(clusterName)
+		cluster, err := c.GetCluster(ace.ClusterGetOptions{
+			Name: clusterName,
+		})
 		if err != nil {
 			return false, err
 		}
@@ -71,7 +72,9 @@ func waitForClusterToBeReady(c *ace.Client, clusterName string) error {
 func waitForClusterToBeRemoved(c *ace.Client, clusterName string) error {
 	fmt.Printf("Waiting for cluster %q to be removed.....\n", clusterName)
 	return wait.PollImmediate(2*time.Second, 5*time.Minute, func() (done bool, err error) {
-		cluster, err := c.GetCluster(clusterName)
+		cluster, err := c.GetCluster(ace.ClusterGetOptions{
+			Name: clusterName,
+		})
 		if err != nil {
 			if errors.Is(err, ace.ErrNotFound) {
 				return true, nil
@@ -116,8 +119,7 @@ func printClusterList(clusters []v1alpha1.ClusterInfo) error {
 	return printer.printClusterList(clusters)
 }
 
-type tablePrinter struct {
-}
+type tablePrinter struct{}
 
 func (p *tablePrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', 0)
@@ -135,8 +137,7 @@ func (p *tablePrinter) printClusterList(clusters []v1alpha1.ClusterInfo) error {
 	return w.Flush()
 }
 
-type jsonPrinter struct {
-}
+type jsonPrinter struct{}
 
 func (p *jsonPrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
 	data, err := json.MarshalIndent(cluster, "", " ")
@@ -158,8 +159,7 @@ func (p *jsonPrinter) printClusterList(clusters []v1alpha1.ClusterInfo) error {
 	return nil
 }
 
-type yamlPrinter struct {
-}
+type yamlPrinter struct{}
 
 func (p *yamlPrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
 	data, err := yaml.Marshal(cluster)

@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
+	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 )
 
 func newCmdConnect(f *config.Factory) *cobra.Command {
@@ -40,5 +40,8 @@ func connectCluster(f *config.Factory, name, credential string) (*v1alpha1.Clust
 	if err != nil {
 		return nil, err
 	}
-	return c.ConnectCluster(name, credential)
+	return c.ConnectCluster(ace.ClusterConnectOptions{
+		Name:       name,
+		Credential: credential,
+	})
 }
