@@ -60,10 +60,17 @@ func aceClient() (*ace.Client, error) {
 		return nil, err
 	}
 	client := ace.NewClient(cfg.Endpoint)
+	if cfg.Token != "" {
+		client = client.WithAccessToken(cfg.Token)
+	}
 
 	if cred := auth.GetBasicAuthCredFromEnv(); cred != nil {
 		client = client.WithBasicAuth(cred.Username, cred.Password)
 	}
+	if token := auth.GetAuthTokenFromEnv(); token != "" {
+		client = client.WithAccessToken(token)
+	}
+
 	if cfg.Cookies != nil {
 		client = client.WithCookies(cfg.Cookies)
 	}

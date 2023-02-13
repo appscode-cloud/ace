@@ -76,7 +76,7 @@ func SetContext(ctx Context) error {
 	contextExist, idx := cfg.isContextExist(ctx.Name)
 
 	if contextExist {
-		cfg.Contexts[idx] = updateContext(cfg.Contexts[idx], ctx)
+		cfg.Contexts[idx] = ctx
 	} else {
 		cfg.Contexts = append(cfg.Contexts, ctx)
 	}
@@ -118,6 +118,9 @@ func SetCurrentContext(ctx string) error {
 func (cfg *Config) MaskSensitiveData() {
 	for i := range cfg.Contexts {
 		cfg.Contexts[i].Cookies = nil
+		if cfg.Contexts[i].Token != "" {
+			cfg.Contexts[i].Token = "<REDACTED>"
+		}
 	}
 }
 
@@ -179,17 +182,4 @@ func defaultConfig() Config {
 		},
 		CurrentContext: "bytebuilders",
 	}
-}
-
-func updateContext(cur, new Context) Context {
-	if new.Endpoint != "" {
-		cur.Endpoint = new.Endpoint
-	}
-	if new.Token != "" {
-		cur.Token = new.Token
-	}
-	if new.Cookies != nil {
-		cur.Cookies = new.Cookies
-	}
-	return cur
 }

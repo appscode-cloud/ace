@@ -19,8 +19,9 @@ func NewCmdAuth() *cobra.Command {
 }
 
 const (
-	BB_USERNAME = "BB_USERNAME"
-	BB_PASSWORD = "BB_PASSWORD"
+	BB_USERNAME     = "BB_USERNAME"
+	BB_PASSWORD     = "BB_PASSWORD"
+	BB_ACCESS_TOKEN = "BB_ACCESS_TOKEN"
 
 	csrfCookie    = "_csrf"
 	sessionCookie = "i_like_bytebuilders"
@@ -36,4 +37,8 @@ func GetBasicAuthCredFromEnv() *v1alpha1.BasicAuth {
 		Username: user,
 		Password: password,
 	}
+}
+
+func GetAuthTokenFromEnv() string {
+	return os.Getenv(BB_ACCESS_TOKEN)
 }
