@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
@@ -25,7 +26,7 @@ func newCmdCheck(f *config.Factory) *cobra.Command {
 				fmt.Println("Cluster hasn't been imported yet.")
 				return nil
 			}
-			return printCluster(cluster)
+			return printer.PrintCluster(cluster)
 		},
 	}
 	cmd.Flags().StringVar(&opts.Provider, "provider", "", "Name of the cluster provider")

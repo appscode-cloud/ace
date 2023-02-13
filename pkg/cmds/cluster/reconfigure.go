@@ -3,10 +3,13 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 
+	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +28,6 @@ func newCmdReconfigure(f *config.Factory) *cobra.Command {
 				}
 				return fmt.Errorf("failed to reconfigure cluster. Reason: %w", err)
 			}
-			fmt.Println("Successfully reconfigured the cluster.")
 			return nil
 		},
 	}
@@ -41,9 +43,30 @@ func reconfigureCluster(f *config.Factory, opts ace.ClusterReconfigureOptions) e
 	if err != nil {
 		return err
 	}
-	cluster, err := c.ReconfigureCluster(opts)
+	nc, err := c.NewNatsConnection("ace-cli")
 	if err != nil {
 		return err
 	}
-	return waitForClusterToBeReady(c, cluster.Spec.Name)
+	defer nc.Close()
+
+	responseID := xid.New().String()
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	done := f.Canceller()
+	go func() {
+		err := printer.PrintNATSJobSteps(&wg, nc, responseID, done)
+		if err != nil {
+			fmt.Println("Failed to log reconfigure steps. Reason: ", err)
+		}
+	}()
+
+	opts.ResponseID = responseID
+	_, err = c.ReconfigureCluster(opts)
+	if err != nil {
+		close(done)
+		return err
+	}
+	wg.Wait()
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
@@ -26,7 +27,7 @@ func newCmdGet(f *config.Factory) *cobra.Command {
 				}
 				return fmt.Errorf("failed to get the cluster information. Reason: %w", err)
 			}
-			return printCluster(cluster)
+			return printer.PrintCluster(cluster)
 		},
 	}
 	cmd.Flags().StringVar(&clusterName, "name", "", "Name of the cluster to get")

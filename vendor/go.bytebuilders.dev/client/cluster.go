@@ -55,6 +55,7 @@ type ClusterImportOptions struct {
 	BasicInfo  ClusterBasicInfo
 	Provider   ProviderOptions
 	Components ComponentOptions
+	ResponseID string
 }
 
 func (c *Client) ImportCluster(opts ClusterImportOptions) (*v1alpha1.ClusterInfo, error) {
@@ -66,11 +67,15 @@ func (c *Client) ImportCluster(opts ClusterImportOptions) (*v1alpha1.ClusterInfo
 	if err != nil {
 		return nil, err
 	}
-	apiPath, err = setQueryParams(apiPath, []queryParams{
+	params := []queryParams{
 		{key: "credential", value: opts.Provider.Credential},
 		{key: "install-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
 		{key: "install-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
-	})
+	}
+	if opts.ResponseID != "" {
+		params = append(params, queryParams{key: "response-id", value: opts.ResponseID})
+	}
+	apiPath, err = setQueryParams(apiPath, params)
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +175,7 @@ func (c *Client) ConnectCluster(opts ClusterConnectOptions) (*v1alpha1.ClusterIn
 type ClusterReconfigureOptions struct {
 	Name       string
 	Components ComponentOptions
+	ResponseID string
 }
 
 func (c *Client) ReconfigureCluster(opts ClusterReconfigureOptions) (*v1alpha1.ClusterInfo, error) {
@@ -178,10 +184,15 @@ func (c *Client) ReconfigureCluster(opts ClusterReconfigureOptions) (*v1alpha1.C
 		return nil, err
 	}
 	apiPath := fmt.Sprintf("/clustersv2/%s/%s/reconfigure", org, opts.Name)
-	apiPath, err = setQueryParams(apiPath, []queryParams{
+
+	params := []queryParams{
 		{key: "install-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
 		{key: "install-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
-	})
+	}
+	if opts.ResponseID != "" {
+		params = append(params, queryParams{key: "response-id", value: opts.ResponseID})
+	}
+	apiPath, err = setQueryParams(apiPath, params)
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +208,7 @@ func (c *Client) ReconfigureCluster(opts ClusterReconfigureOptions) (*v1alpha1.C
 type ClusterRemovalOptions struct {
 	Name       string
 	Components ComponentOptions
+	ResponseID string
 }
 
 func (c *Client) RemoveCluster(opts ClusterRemovalOptions) error {
@@ -205,10 +217,15 @@ func (c *Client) RemoveCluster(opts ClusterRemovalOptions) error {
 		return err
 	}
 	apiPath := fmt.Sprintf("/clustersv2/%s/%s/remove", org, opts.Name)
-	apiPath, err = setQueryParams(apiPath, []queryParams{
+
+	params := []queryParams{
 		{key: "remove-fluxcd", value: fmt.Sprintf("%v", opts.Components.FluxCD)},
 		{key: "remove-license-server", value: fmt.Sprintf("%v", opts.Components.LicenseServer)},
-	})
+	}
+	if opts.ResponseID != "" {
+		params = append(params, queryParams{key: "response-id", value: opts.ResponseID})
+	}
+	apiPath, err = setQueryParams(apiPath, params)
 	if err != nil {
 		return err
 	}

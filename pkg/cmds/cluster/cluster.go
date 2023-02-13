@@ -17,23 +17,11 @@ limitations under the License.
 package cluster
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
-	"text/tabwriter"
-	"time"
-
 	"go.bytebuilders.dev/ace-cli/pkg/config"
-	ace "go.bytebuilders.dev/client"
-	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/yaml"
 )
-
-var OutputFormat string
 
 func NewCmdCluster(f *config.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -49,134 +37,6 @@ func NewCmdCluster(f *config.Factory) *cobra.Command {
 	cmd.AddCommand(newCmdReconfigure(f))
 	cmd.AddCommand(newCmdRemove(f))
 
-	cmd.PersistentFlags().StringVarP(&OutputFormat, "output", "o", "", "Output format (any of json,yaml,table). Default is table.")
+	cmd.PersistentFlags().StringVarP(&printer.OutputFormat, "output", "o", "", "Output format (any of json,yaml,table). Default is table.")
 	return cmd
-}
-
-func waitForClusterToBeReady(c *ace.Client, clusterName string) error {
-	fmt.Printf("Waiting for cluster %q to be ready.....\n", clusterName)
-	return wait.PollImmediate(2*time.Second, 5*time.Minute, func() (done bool, err error) {
-		cluster, err := c.GetCluster(ace.ClusterGetOptions{
-			Name: clusterName,
-		})
-		if err != nil {
-			return false, err
-		}
-		if cluster.Status.Phase == v1alpha1.ClusterPhaseActive {
-			return true, nil
-		}
-		return false, nil
-	})
-}
-
-func waitForClusterToBeRemoved(c *ace.Client, clusterName string) error {
-	fmt.Printf("Waiting for cluster %q to be removed.....\n", clusterName)
-	return wait.PollImmediate(2*time.Second, 5*time.Minute, func() (done bool, err error) {
-		cluster, err := c.GetCluster(ace.ClusterGetOptions{
-			Name: clusterName,
-		})
-		if err != nil {
-			if errors.Is(err, ace.ErrNotFound) {
-				return true, nil
-			}
-			return false, err
-		}
-		if err != nil {
-			return false, err
-		}
-		if cluster.Status.Phase == v1alpha1.ClusterPhaseInactive {
-			return true, nil
-		}
-		return false, nil
-	})
-}
-
-type clusterPrinter interface {
-	printCluster(cluster *v1alpha1.ClusterInfo) error
-	printClusterList(clusters []v1alpha1.ClusterInfo) error
-}
-
-func newPrinter() clusterPrinter {
-	var printer clusterPrinter
-	switch OutputFormat {
-	case "json":
-		printer = &jsonPrinter{}
-	case "yaml":
-		printer = &yamlPrinter{}
-	default:
-		printer = &tablePrinter{}
-	}
-	return printer
-}
-
-func printCluster(cluster *v1alpha1.ClusterInfo) error {
-	printer := newPrinter()
-	return printer.printCluster(cluster)
-}
-
-func printClusterList(clusters []v1alpha1.ClusterInfo) error {
-	printer := newPrinter()
-	return printer.printClusterList(clusters)
-}
-
-type tablePrinter struct{}
-
-func (p *tablePrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, "NAME\tDISPLAY_NAME\tPROVIDER\tPHASE")
-	fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", cluster.Spec.Name, cluster.Spec.DisplayName, cluster.Spec.Provider, cluster.Status.Phase)
-	return w.Flush()
-}
-
-func (p *tablePrinter) printClusterList(clusters []v1alpha1.ClusterInfo) error {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', 0)
-	fmt.Fprintln(w, "NAME\tDISPLAY_NAME\tPROVIDER\tPHASE")
-	for i := range clusters {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", clusters[i].Spec.Name, clusters[i].Spec.DisplayName, clusters[i].Spec.Provider, clusters[i].Status.Phase)
-	}
-	return w.Flush()
-}
-
-type jsonPrinter struct{}
-
-func (p *jsonPrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
-	data, err := json.MarshalIndent(cluster, "", " ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(data))
-	return nil
-}
-
-func (p *jsonPrinter) printClusterList(clusters []v1alpha1.ClusterInfo) error {
-	for i := range clusters {
-		data, err := json.MarshalIndent(clusters[i], "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(data))
-	}
-	return nil
-}
-
-type yamlPrinter struct{}
-
-func (p *yamlPrinter) printCluster(cluster *v1alpha1.ClusterInfo) error {
-	data, err := yaml.Marshal(cluster)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(data))
-	return nil
-}
-
-func (p *yamlPrinter) printClusterList(clusters []v1alpha1.ClusterInfo) error {
-	for i := range clusters {
-		data, err := yaml.Marshal(clusters[i])
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(data))
-	}
-	return nil
 }

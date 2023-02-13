@@ -2,10 +2,13 @@ package cluster
 
 import (
 	"fmt"
+	"sync"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 
+	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +23,6 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to import cluster. Reason: %w", err)
 			}
-			fmt.Println("Successfully imported the cluster.")
 			return nil
 		},
 	}
@@ -37,14 +39,35 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 }
 
 func importCluster(f *config.Factory, opts ace.ClusterImportOptions) error {
+	fmt.Println("Importing cluster......")
 	c, err := f.Client()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Importing cluster......")
-	cluster, err := c.ImportCluster(opts)
+	nc, err := c.NewNatsConnection("ace-cli")
 	if err != nil {
 		return err
 	}
-	return waitForClusterToBeReady(c, cluster.Spec.Name)
+	defer nc.Close()
+
+	responseID := xid.New().String()
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	done := f.Canceller()
+	go func() {
+		err := printer.PrintNATSJobSteps(&wg, nc, responseID, done)
+		if err != nil {
+			fmt.Println("Failed to log the import steps. Reason: ", err)
+		}
+	}()
+
+	opts.ResponseID = responseID
+	_, err = c.ImportCluster(opts)
+	if err != nil {
+		close(done)
+		return err
+	}
+	wg.Wait()
+
+	return nil
 }

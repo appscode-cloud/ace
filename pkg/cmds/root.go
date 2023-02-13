@@ -17,6 +17,10 @@ limitations under the License.
 package cmds
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"go.bytebuilders.dev/ace-cli/pkg/cmds/auth"
 	"go.bytebuilders.dev/ace-cli/pkg/cmds/cluster"
 	cmdconfig "go.bytebuilders.dev/ace-cli/pkg/cmds/config"
@@ -37,7 +41,8 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&config.CurrentContext, "context", "", "Use this as current context instead of one from configuration file")
 
 	f := &config.Factory{
-		Client: aceClient,
+		Client:    aceClient,
+		Canceller: canceller,
 	}
 	rootCmd.AddCommand(cmdconfig.NewCmdConfig())
 	rootCmd.AddCommand(cluster.NewCmdCluster(f))
@@ -64,4 +69,10 @@ func aceClient() (*ace.Client, error) {
 	}
 
 	return client, err
+}
+
+func canceller() chan os.Signal {
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, syscall.SIGINT, syscall.SIGTERM)
+	return stopCh
 }

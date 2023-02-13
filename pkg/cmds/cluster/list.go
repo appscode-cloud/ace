@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
@@ -25,7 +26,7 @@ func newCmdList(f *config.Factory) *cobra.Command {
 				fmt.Println("No cluster found.")
 				return nil
 			}
-			return printClusterList(clusters.Items)
+			return printer.PrintClusterList(clusters.Items)
 		},
 	}
 	cmd.Flags().StringVar(&listOptions.Provider, "provider", "", "List cluster only for this provider")

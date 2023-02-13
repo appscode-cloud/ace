@@ -3,10 +3,13 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 
+	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +28,6 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 				}
 				return fmt.Errorf("failed to remove cluster. Reason: %w", err)
 			}
-			fmt.Println("Successfully removed the cluster.")
 			return nil
 		},
 	}
@@ -41,10 +43,30 @@ func removeCluster(f *config.Factory, opts ace.ClusterRemovalOptions) error {
 	if err != nil {
 		return err
 	}
-	err = c.RemoveCluster(opts)
+	nc, err := c.NewNatsConnection("ace-cli")
 	if err != nil {
 		return err
 	}
+	defer nc.Close()
 
-	return waitForClusterToBeRemoved(c, opts.Name)
+	responseID := xid.New().String()
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	done := f.Canceller()
+	go func() {
+		err := printer.PrintNATSJobSteps(&wg, nc, responseID, done)
+		if err != nil {
+			fmt.Println("Failed to log removal steps. Reason: ", err)
+		}
+	}()
+
+	opts.ResponseID = responseID
+	err = c.RemoveCluster(opts)
+	if err != nil {
+		close(done)
+		return err
+	}
+	wg.Wait()
+
+	return nil
 }
