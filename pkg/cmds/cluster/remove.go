@@ -8,13 +8,14 @@ import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
 func newCmdRemove(f *config.Factory) *cobra.Command {
-	opts := ace.ClusterRemovalOptions{}
+	opts := clustermodel.RemovalOptions{}
 	cmd := &cobra.Command{
 		Use:               "remove",
 		Short:             "Remove a cluster from ACE platform",
@@ -37,7 +38,7 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 	return cmd
 }
 
-func removeCluster(f *config.Factory, opts ace.ClusterRemovalOptions) error {
+func removeCluster(f *config.Factory, opts clustermodel.RemovalOptions) error {
 	fmt.Println("Removing cluster......")
 	c, err := f.Client()
 	if err != nil {
@@ -60,8 +61,7 @@ func removeCluster(f *config.Factory, opts ace.ClusterRemovalOptions) error {
 		}
 	}()
 
-	opts.ResponseID = responseID
-	err = c.RemoveCluster(opts)
+	err = c.RemoveCluster(opts, responseID)
 	if err != nil {
 		close(done)
 		return err

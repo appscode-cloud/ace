@@ -5,20 +5,20 @@ import (
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	"go.bytebuilders.dev/ace-cli/pkg/printer"
-	ace "go.bytebuilders.dev/client"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
 )
 
 func newCmdList(f *config.Factory) *cobra.Command {
-	listOptions := ace.ClusterListOptions{}
+	listOptions := clustermodel.ListOptions{}
 	cmd := &cobra.Command{
 		Use:               "list",
 		Short:             "List cluster managed by ACE platform",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clusters, err := listClusters(f, &listOptions)
+			clusters, err := listClusters(f, listOptions)
 			if err != nil {
 				return fmt.Errorf("failed to list clusters. Reason: %w", err)
 			}
@@ -34,7 +34,7 @@ func newCmdList(f *config.Factory) *cobra.Command {
 	return cmd
 }
 
-func listClusters(f *config.Factory, opts *ace.ClusterListOptions) (*v1alpha1.ClusterInfoList, error) {
+func listClusters(f *config.Factory, opts clustermodel.ListOptions) (*v1alpha1.ClusterInfoList, error) {
 	c, err := f.Client()
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func listClusters(f *config.Factory, opts *ace.ClusterListOptions) (*v1alpha1.Cl
 		return nil, err
 	}
 	for i := range clusters.Items {
-		cluster, err := c.GetCluster(ace.ClusterGetOptions{
+		cluster, err := c.GetCluster(clustermodel.GetOptions{
 			Name: clusters.Items[i].Spec.Name,
 		})
 		if err != nil {

@@ -3,22 +3,32 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
 )
 
 func newCmdConnect(f *config.Factory) *cobra.Command {
-	var clusterName, credential string
+	opts := clustermodel.ConnectOptions{}
+	var kubeConfigPath string
 	cmd := &cobra.Command{
 		Use:               "connect",
 		Short:             "Connect with a cluster imported by peers",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := connectCluster(f, clusterName, credential)
+			if kubeConfigPath != "" {
+				data, err := os.ReadFile(kubeConfigPath)
+				if err != nil {
+					return fmt.Errorf("failed to read Kubeconfig file. Reason: %w", err)
+				}
+				opts.KubeConfig = string(data)
+			}
+			_, err := connectCluster(f, opts)
 			if err != nil {
 				if errors.Is(err, ace.ErrNotFound) {
 					fmt.Println("Provided cluster does not exist. Please provide a valid cluster name.")
@@ -30,18 +40,16 @@ func newCmdConnect(f *config.Factory) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&clusterName, "name", "", "Name of the cluster to get")
-	cmd.Flags().StringVar(&credential, "credential", "", "Name of the credential to use to connect with the cluster")
+	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the cluster to get")
+	cmd.Flags().StringVar(&opts.Credential, "credential", "", "Name of the credential to use to connect with the cluster")
+	cmd.Flags().StringVar(&kubeConfigPath, "kubeconfig", "", "Path of the kubeconfig file")
 	return cmd
 }
 
-func connectCluster(f *config.Factory, name, credential string) (*v1alpha1.ClusterInfo, error) {
+func connectCluster(f *config.Factory, opts clustermodel.ConnectOptions) (*v1alpha1.ClusterInfo, error) {
 	c, err := f.Client()
 	if err != nil {
 		return nil, err
 	}
-	return c.ConnectCluster(ace.ClusterConnectOptions{
-		Name:       name,
-		Credential: credential,
-	})
+	return c.ConnectCluster(opts)
 }

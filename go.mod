@@ -7,12 +7,11 @@ require (
 	github.com/nats-io/nats.go v1.23.0
 	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.5.0
-	go.bytebuilders.dev/client v0.0.0-20230210110412-295c0b9d6256
-	go.bytebuilders.dev/resource-model v0.0.3-0.20230123121048-fde4d672c8dc
+	go.bytebuilders.dev/client v0.0.0-20230223110854-4659aaa2e465
+	go.bytebuilders.dev/resource-model v0.0.3-0.20230222130038-18e53282ece4
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.25.3
 	k8s.io/klog/v2 v2.80.1
 	kubeops.dev/installer v0.0.0-20230123175024-30db39f06568
 	sigs.k8s.io/yaml v1.3.0
@@ -73,6 +72,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.25.3 // indirect
 	k8s.io/apiextensions-apiserver v0.25.3 // indirect
+	k8s.io/apimachinery v0.25.3 // indirect
 	k8s.io/client-go v0.25.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
 	k8s.io/utils v0.0.0-20220823124924-e9cbc92d1a73 // indirect

@@ -2,23 +2,32 @@ package cluster
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	"go.bytebuilders.dev/ace-cli/pkg/printer"
-	ace "go.bytebuilders.dev/client"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
 func newCmdImport(f *config.Factory) *cobra.Command {
-	opts := ace.ClusterImportOptions{}
+	opts := clustermodel.ImportOptions{}
+	var kubeConfigPath string
 	cmd := &cobra.Command{
 		Use:               "import",
 		Short:             "Import a cluster to ACE platform",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if kubeConfigPath != "" {
+				data, err := os.ReadFile(kubeConfigPath)
+				if err != nil {
+					return fmt.Errorf("failed to read Kubeconfig file. Reason: %w", err)
+				}
+				opts.Provider.KubeConfig = string(data)
+			}
 			err := importCluster(f, opts)
 			if err != nil {
 				return fmt.Errorf("failed to import cluster. Reason: %w", err)
@@ -26,9 +35,10 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&opts.Provider.Provider, "provider", "", "Name of the cluster provider")
+	cmd.Flags().StringVar(&opts.Provider.Name, "provider", "", "Name of the cluster provider")
 	cmd.Flags().StringVar(&opts.Provider.Credential, "credential", "", "Name of the credential with access to the provider APIs")
 	cmd.Flags().StringVar(&opts.Provider.ClusterID, "id", "", "Provider specific cluster ID")
+	cmd.Flags().StringVar(&kubeConfigPath, "kubeconfig", "", "Path of the kubeconfig file")
 
 	cmd.Flags().StringVar(&opts.BasicInfo.DisplayName, "display-name", "", "Display name of the cluster")
 	cmd.Flags().StringVar(&opts.BasicInfo.Name, "name", "", "Unique name across all imported clusters of all provider")
@@ -38,7 +48,7 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 	return cmd
 }
 
-func importCluster(f *config.Factory, opts ace.ClusterImportOptions) error {
+func importCluster(f *config.Factory, opts clustermodel.ImportOptions) error {
 	fmt.Println("Importing cluster......")
 	c, err := f.Client()
 	if err != nil {
@@ -61,8 +71,7 @@ func importCluster(f *config.Factory, opts ace.ClusterImportOptions) error {
 		}
 	}()
 
-	opts.ResponseID = responseID
-	_, err = c.ImportCluster(opts)
+	_, err = c.ImportCluster(opts, responseID)
 	if err != nil {
 		close(done)
 		return err

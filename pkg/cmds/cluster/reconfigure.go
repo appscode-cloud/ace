@@ -8,13 +8,14 @@ import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	"go.bytebuilders.dev/ace-cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/rs/xid"
 	"github.com/spf13/cobra"
 )
 
 func newCmdReconfigure(f *config.Factory) *cobra.Command {
-	opts := ace.ClusterReconfigureOptions{}
+	opts := clustermodel.ReconfigureOptions{}
 	cmd := &cobra.Command{
 		Use:               "reconfigure",
 		Short:             "Re-install cluster components to fix common issues",
@@ -37,7 +38,7 @@ func newCmdReconfigure(f *config.Factory) *cobra.Command {
 	return cmd
 }
 
-func reconfigureCluster(f *config.Factory, opts ace.ClusterReconfigureOptions) error {
+func reconfigureCluster(f *config.Factory, opts clustermodel.ReconfigureOptions) error {
 	fmt.Println("Reconfiguring cluster......")
 	c, err := f.Client()
 	if err != nil {
@@ -60,8 +61,7 @@ func reconfigureCluster(f *config.Factory, opts ace.ClusterReconfigureOptions) e
 		}
 	}()
 
-	opts.ResponseID = responseID
-	_, err = c.ReconfigureCluster(opts)
+	_, err = c.ReconfigureCluster(opts, responseID)
 	if err != nil {
 		close(done)
 		return err
