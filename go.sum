@@ -339,10 +339,10 @@ github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9de
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-go.bytebuilders.dev/client v0.0.0-20230223110854-4659aaa2e465 h1:y3zXof1uapkeqPtv0GlBn7QsiY/7ptmK6NatxeEH93A=
-go.bytebuilders.dev/client v0.0.0-20230223110854-4659aaa2e465/go.mod h1:0K5v9WO2iI50Eo4SvqoNPApzbniZkfCt1Y7sPwH+DMQ=
-go.bytebuilders.dev/resource-model v0.0.3-0.20230222130038-18e53282ece4 h1:wZgSxZt9eL7I4OA07HXeNb9KyvvgLT9Yi72Xt448dgY=
-go.bytebuilders.dev/resource-model v0.0.3-0.20230222130038-18e53282ece4/go.mod h1:x0fe4N+nSxQuDoTPQSKz1O+NfB/gEFDeDUxGzXMNX5E=
+go.bytebuilders.dev/client v0.0.0-20230223124717-ecee0640e548 h1:3tAPjqS70Qnv5TaoO4yr/6G/fztJUr/8iTvn3rId3oM=
+go.bytebuilders.dev/client v0.0.0-20230223124717-ecee0640e548/go.mod h1:ve/sjHngUzQ3ZHVNem6E0j3mt7cBlpWHhlqMLwXGVoo=
+go.bytebuilders.dev/resource-model v0.0.3-0.20230223123055-4963db4bf260 h1:tgaV488tx6vDAUvoGDYd155yN5DsLdSjiRh95gmLsPY=
+go.bytebuilders.dev/resource-model v0.0.3-0.20230223123055-4963db4bf260/go.mod h1:x0fe4N+nSxQuDoTPQSKz1O+NfB/gEFDeDUxGzXMNX5E=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=

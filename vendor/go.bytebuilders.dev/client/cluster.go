@@ -188,7 +188,7 @@ func getProviderSpecificAPIPath(org string, opts clustermodel.ProviderOptions, s
 		if opts.ClusterID == "" {
 			return "", fmt.Errorf("missing linode cluster ID")
 		}
-		apiPath = fmt.Sprintf("/clouds2/%s/providers/linode/%s", org, opts.ClusterID)
+		apiPath = fmt.Sprintf("/clouds2/%s/providers/linode/clusters/%s", org, opts.ClusterID)
 	case lower(string(v1alpha1.ProviderGeneric)):
 		apiPath = fmt.Sprintf("/clouds2/%s/providers/generic", org)
 	default:
