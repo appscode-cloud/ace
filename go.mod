@@ -7,7 +7,7 @@ require (
 	github.com/nats-io/nats.go v1.23.0
 	github.com/rs/xid v1.4.0
 	github.com/spf13/cobra v1.5.0
-	go.bytebuilders.dev/client v0.0.0-20230227071535-ec55e29cfc9a
+	go.bytebuilders.dev/client v0.0.0-20230227092350-a1b5ef6fe7e3
 	go.bytebuilders.dev/resource-model v0.0.3-0.20230227071326-d2f2017f2783
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14

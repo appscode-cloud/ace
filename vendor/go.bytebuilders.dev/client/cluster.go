@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path/filepath"
-	"strings"
 
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
@@ -17,10 +15,7 @@ func (c *Client) CheckClusterExistence(opts clustermodel.ProviderOptions) (*v1al
 	if err != nil {
 		return nil, err
 	}
-	apiPath, err := getProviderSpecificAPIPath(org, opts, "check")
-	if err != nil {
-		return nil, err
-	}
+	apiPath := fmt.Sprintf("/clustersv2/%s/check", org)
 
 	body, err := json.Marshal(opts)
 	if err != nil {
@@ -40,10 +35,8 @@ func (c *Client) ImportCluster(opts clustermodel.ImportOptions, responseID strin
 	if err != nil {
 		return nil, err
 	}
-	apiPath, err := getProviderSpecificAPIPath(org, opts.Provider, "import")
-	if err != nil {
-		return nil, err
-	}
+	apiPath := fmt.Sprintf("/clustersv2/%s/import", org)
+
 	params := make([]queryParams, 0)
 	if responseID != "" {
 		params = append(params, queryParams{key: "response-id", value: responseID})
@@ -179,24 +172,4 @@ func (c *Client) RemoveCluster(opts clustermodel.RemovalOptions, responseID stri
 		return err
 	}
 	return nil
-}
-
-func getProviderSpecificAPIPath(org string, opts clustermodel.ProviderOptions, suffix string) (string, error) {
-	var apiPath string
-	switch lower(opts.Name) {
-	case lower(string(v1alpha1.ProviderLinode)):
-		if opts.ClusterID == "" {
-			return "", fmt.Errorf("missing linode cluster ID")
-		}
-		apiPath = fmt.Sprintf("/clouds2/%s/providers/linode/clusters/%s", org, opts.ClusterID)
-	case lower(string(v1alpha1.ProviderGeneric)):
-		apiPath = fmt.Sprintf("/clouds2/%s/providers/generic", org)
-	default:
-		return "", fmt.Errorf("import is not supported for provider %s", opts.Name)
-	}
-	return filepath.Join(apiPath, suffix), nil
-}
-
-func lower(s string) string {
-	return strings.ToLower(s)
 }
