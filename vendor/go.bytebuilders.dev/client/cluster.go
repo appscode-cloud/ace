@@ -10,7 +10,7 @@ import (
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 )
 
-func (c *Client) CheckClusterExistence(opts clustermodel.ProviderOptions) (*v1alpha1.ClusterInfo, error) {
+func (c *Client) CheckClusterExistence(opts clustermodel.CheckOptions) (*v1alpha1.ClusterInfo, error) {
 	org, err := c.getOrganization()
 	if err != nil {
 		return nil, err

@@ -13,7 +13,7 @@ import (
 )
 
 func newCmdCheck(f *config.Factory) *cobra.Command {
-	opts := clustermodel.ProviderOptions{}
+	opts := clustermodel.CheckOptions{}
 	var kubeConfigPath string
 	cmd := &cobra.Command{
 		Use:               "check",
@@ -25,7 +25,7 @@ func newCmdCheck(f *config.Factory) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("failed to read Kubeconfig file. Reason: %w", err)
 				}
-				opts.KubeConfig = string(data)
+				opts.Provider.KubeConfig = string(data)
 			}
 			cluster, err := checkClusterExistence(f, opts)
 			if err != nil {
@@ -38,15 +38,15 @@ func newCmdCheck(f *config.Factory) *cobra.Command {
 			return printer.PrintCluster(cluster)
 		},
 	}
-	cmd.Flags().StringVar(&opts.Name, "provider", "", "Name of the cluster provider")
-	cmd.Flags().StringVar(&opts.Credential, "credential", "", "Name of the credential with access to the provider APIs")
-	cmd.Flags().StringVar(&opts.ClusterID, "id", "", "Provider specific cluster ID")
+	cmd.Flags().StringVar(&opts.Provider.Name, "provider", "", "Name of the cluster provider")
+	cmd.Flags().StringVar(&opts.Provider.Credential, "credential", "", "Name of the credential with access to the provider APIs")
+	cmd.Flags().StringVar(&opts.Provider.ClusterID, "id", "", "Provider specific cluster ID")
 	cmd.Flags().StringVar(&kubeConfigPath, "kubeconfig", "", "Path of the kubeconfig file")
 
 	return cmd
 }
 
-func checkClusterExistence(f *config.Factory, opts clustermodel.ProviderOptions) (*v1alpha1.ClusterInfo, error) {
+func checkClusterExistence(f *config.Factory, opts clustermodel.CheckOptions) (*v1alpha1.ClusterInfo, error) {
 	c, err := f.Client()
 	if err != nil {
 		return nil, err
