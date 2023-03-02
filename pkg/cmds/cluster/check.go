@@ -41,6 +41,9 @@ func newCmdCheck(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.Provider.Name, "provider", "", "Name of the cluster provider")
 	cmd.Flags().StringVar(&opts.Provider.Credential, "credential", "", "Name of the credential with access to the provider APIs")
 	cmd.Flags().StringVar(&opts.Provider.ClusterID, "id", "", "Provider specific cluster ID")
+	cmd.Flags().StringVar(&opts.Provider.Project, "project", "", "Project where the cluster belong (use for GKE)")
+	cmd.Flags().StringVar(&opts.Provider.Region, "region", "", "Region or location of the cluster")
+	cmd.Flags().StringVar(&opts.Provider.ResourceGroup, "resource-group", "", "Resource group of the cluster (use for AKS)")
 	cmd.Flags().StringVar(&kubeConfigPath, "kubeconfig", "", "Path of the kubeconfig file")
 
 	return cmd
