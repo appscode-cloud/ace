@@ -21,6 +21,7 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 		Short:             "Remove a cluster from ACE platform",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Components.FeatureSets = defaultFeatureSet
 			err := removeCluster(f, opts)
 			if err != nil {
 				if errors.Is(err, ace.ErrNotFound) {

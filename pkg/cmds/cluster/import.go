@@ -28,6 +28,8 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 				}
 				opts.Provider.KubeConfig = string(data)
 			}
+			opts.Components.FeatureSets = defaultFeatureSet
+
 			err := importCluster(f, opts)
 			if err != nil {
 				return fmt.Errorf("failed to import cluster. Reason: %w", err)

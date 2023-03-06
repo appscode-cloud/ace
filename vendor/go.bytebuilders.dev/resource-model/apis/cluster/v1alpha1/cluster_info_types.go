@@ -39,6 +39,7 @@ const (
 	ProviderScaleway     ProviderName = "Scaleway"
 	ProviderVultr        ProviderName = "Vultr"
 	ProviderGeneric      ProviderName = "Generic"
+	ProviderPrivate      ProviderName = "Private"
 )
 
 // +genclient

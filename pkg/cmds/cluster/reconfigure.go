@@ -21,6 +21,7 @@ func newCmdReconfigure(f *config.Factory) *cobra.Command {
 		Short:             "Re-install cluster components to fix common issues",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.Components.FeatureSets = defaultFeatureSet
 			err := reconfigureCluster(f, opts)
 			if err != nil {
 				if errors.Is(err, ace.ErrNotFound) {

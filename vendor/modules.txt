@@ -128,11 +128,11 @@ github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
 ## explicit
 github.com/yudai/golcs
-# go.bytebuilders.dev/client v0.0.0-20230302063755-39c7422d460e
+# go.bytebuilders.dev/client v0.0.0-20230306144830-c1d06dcfda44
 ## explicit; go 1.19
 go.bytebuilders.dev/client
 go.bytebuilders.dev/client/api
-# go.bytebuilders.dev/resource-model v0.0.3-0.20230302060210-93dbd266e274
+# go.bytebuilders.dev/resource-model v0.0.3-0.20230306113109-d6ca0ff64fd3
 ## explicit; go 1.17
 go.bytebuilders.dev/resource-model/apis/cluster
 go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1

@@ -19,6 +19,7 @@ package cluster
 import (
 	"go.bytebuilders.dev/ace-cli/pkg/config"
 	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/spf13/cobra"
 )
@@ -39,4 +40,11 @@ func NewCmdCluster(f *config.Factory) *cobra.Command {
 
 	cmd.PersistentFlags().StringVarP(&printer.OutputFormat, "output", "o", "", "Output format (any of json,yaml,table). Default is table.")
 	return cmd
+}
+
+var defaultFeatureSet = []clustermodel.FeatureSet{
+	{
+		Name:     "opscenter-core",
+		Features: []string{"kube-ui-server", "supervisor"},
+	},
 }
