@@ -39,6 +39,7 @@ func NewRootCmd() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 	rootCmd.PersistentFlags().StringVar(&config.CurrentContext, "context", "", "Use this as current context instead of one from configuration file")
+	rootCmd.PersistentFlags().StringVar(&config.Organization, "org", "", "Use this organization for instead of auto-detecting current one")
 
 	f := &config.Factory{
 		Client:    aceClient,
@@ -60,6 +61,10 @@ func aceClient() (*ace.Client, error) {
 		return nil, err
 	}
 	client := ace.NewClient(cfg.Endpoint)
+	if config.Organization != "" {
+		client = client.WithOrganization(config.Organization)
+	}
+
 	if cfg.Token != "" {
 		client = client.WithAccessToken(cfg.Token)
 	}

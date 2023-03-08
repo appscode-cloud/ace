@@ -14,7 +14,10 @@ const (
 	configVersion = "v1"
 )
 
-var CurrentContext string
+var (
+	CurrentContext string
+	Organization   string
+)
 
 var ErrContextNotFound = errors.New("context does not exist")
 

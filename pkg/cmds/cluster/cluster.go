@@ -45,6 +45,6 @@ func NewCmdCluster(f *config.Factory) *cobra.Command {
 var defaultFeatureSet = []clustermodel.FeatureSet{
 	{
 		Name:     "opscenter-core",
-		Features: []string{"kube-ui-server", "supervisor"},
+		Features: []string{"kube-ui-server"},
 	},
 }

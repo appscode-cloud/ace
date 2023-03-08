@@ -21,7 +21,9 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 		Short:             "Remove a cluster from ACE platform",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Components.FeatureSets = defaultFeatureSet
+			if !opts.Components.AllFeatures {
+				opts.Components.FeatureSets = defaultFeatureSet
+			}
 			err := removeCluster(f, opts)
 			if err != nil {
 				if errors.Is(err, ace.ErrNotFound) {
@@ -36,6 +38,7 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the cluster to get")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "remove-fluxcd", true, "Specify whether to remove FluxCD or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.LicenseServer, "remove-license-server", true, "Specify whether to remove license server or not (default true).")
+	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Remove all features")
 	return cmd
 }
 

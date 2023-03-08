@@ -28,7 +28,9 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 				}
 				opts.Provider.KubeConfig = string(data)
 			}
-			opts.Components.FeatureSets = defaultFeatureSet
+			if !opts.Components.AllFeatures {
+				opts.Components.FeatureSets = defaultFeatureSet
+			}
 
 			err := importCluster(f, opts)
 			if err != nil {
@@ -49,6 +51,7 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.BasicInfo.Name, "name", "", "Unique name across all imported clusters of all provider")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "install-fluxcd", true, "Specify whether to install FluxCD or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.LicenseServer, "install-license-server", true, "Specify whether to install license-server or not (default true).")
+	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Install all features")
 
 	return cmd
 }
