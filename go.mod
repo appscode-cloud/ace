@@ -6,18 +6,16 @@ require (
 	github.com/fatih/color v1.14.1
 	github.com/nats-io/nats.go v1.24.0
 	github.com/rs/xid v1.4.0
-	github.com/spf13/cobra v1.6.0
-	go.bytebuilders.dev/client v0.0.0-20230308150022-1a678dfe7530
-	go.bytebuilders.dev/resource-model v0.0.4-0.20230308133614-bded3cb56802
+	github.com/spf13/cobra v1.6.1
+	go.bytebuilders.dev/client v0.0.1
+	go.bytebuilders.dev/resource-model v0.0.4
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/x v0.0.14
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/klog/v2 v2.80.1
-	kubeops.dev/installer v0.0.0-20230123175024-30db39f06568
+	k8s.io/klog/v2 v2.90.1
+	kubeops.dev/installer v0.0.0-20230304025333-6579256e7d6b
 	sigs.k8s.io/yaml v1.3.0
 )
-
-replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20220917032906-876dc58b7366
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
@@ -37,6 +35,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.16.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
@@ -68,7 +67,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.25.3 // indirect
 	k8s.io/apiextensions-apiserver v0.25.3 // indirect
@@ -77,9 +76,11 @@ require (
 	k8s.io/kube-openapi v0.0.0-20221207184640-f3cff1453715 // indirect
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
 	kmodules.xyz/client-go v0.25.16 // indirect
-	kubepack.dev/kubepack v0.5.3-0.20221202122017-7e2dac11a985 // indirect
-	sigs.k8s.io/application v0.8.2-0.20200306235134-f10d9ca8abd4 // indirect
-	sigs.k8s.io/controller-runtime v0.13.1 // indirect
+	kubepack.dev/kubepack v0.5.2 // indirect
+	sigs.k8s.io/application v0.0.0-00010101000000-000000000000 // indirect
+	sigs.k8s.io/controller-runtime v0.13.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
+
+replace sigs.k8s.io/application => github.com/kmodules/application v0.8.4-0.20220917032906-876dc58b7366
