@@ -14,10 +14,18 @@
 
 SHELL=/bin/bash -o pipefail
 
+PRODUCT_OWNER_NAME := appscode
+PRODUCT_NAME       := ace
+ENFORCE_LICENSE    ?=
+
 GO_PKG   := go.bytebuilders.dev
 REPO     := $(notdir $(shell pwd))
 BIN      := ace
 COMPRESS ?= no
+
+# Where to push the docker image.
+REGISTRY ?= ghcr.io/appscode
+SRC_REG  ?=
 
 # This version-strategy uses git tags to set the version string
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
@@ -53,8 +61,19 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64 darwin/arm64
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-GO_VERSION       ?= 1.20
+BASEIMAGE_PROD   ?= alpine
+BASEIMAGE_DBG    ?= debian:bullseye
+
+IMAGE            := $(REGISTRY)/$(BIN)
+VERSION_PROD     := $(VERSION)
+VERSION_DBG      := $(VERSION)-dbg
+TAG              := $(VERSION)_$(OS)_$(ARCH)
+TAG_PROD         := $(TAG)
+TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
+
+GO_VERSION       ?= 1.21
 BUILD_IMAGE      ?= ghcr.io/appscode/golang-dev:$(GO_VERSION)
+CHART_TEST_IMAGE ?= quay.io/helmpack/chart-testing:v3.5.1
 
 OUTBIN = bin/$(BIN)-$(OS)-$(ARCH)
 ifeq ($(OS),windows)
@@ -69,6 +88,9 @@ BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                hack/config           \
                $(HOME)/.credentials  \
                $(HOME)/.kube
+
+DOCKERFILE_PROD  = Dockerfile.in
+DOCKERFILE_DBG   = Dockerfile.dbg
 
 DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 
@@ -86,19 +108,35 @@ build-%:
 	    GOOS=$(firstword $(subst _, ,$*)) \
 	    GOARCH=$(lastword $(subst _, ,$*))
 
+container-%:
+	@$(MAKE) container                    \
+	    --no-print-directory              \
+	    GOOS=$(firstword $(subst _, ,$*)) \
+	    GOARCH=$(lastword $(subst _, ,$*))
+
+push-%:
+	@$(MAKE) push                         \
+	    --no-print-directory              \
+	    GOOS=$(firstword $(subst _, ,$*)) \
+	    GOARCH=$(lastword $(subst _, ,$*))
+
 all-build: $(addprefix build-, $(subst /,_, $(BIN_PLATFORMS)))
 ifeq ($(COMPRESS),yes)
 	@cd bin; \
 	sha256sum $(patsubst $(BIN)-windows-%.tar.gz,$(BIN)-windows-%.zip, $(addsuffix .tar.gz, $(addprefix $(BIN)-, $(subst /,-, $(BIN_PLATFORMS))))) > $(BIN)-checksums.txt
 endif
 
+all-container: $(addprefix container-, $(subst /,_, $(DOCKER_PLATFORMS)))
+
+all-push: $(addprefix push-, $(subst /,_, $(DOCKER_PLATFORMS)))
+
 version:
-	@echo ::set-output name=version::$(VERSION)
-	@echo ::set-output name=version_strategy::$(version_strategy)
-	@echo ::set-output name=git_tag::$(git_tag)
-	@echo ::set-output name=git_branch::$(git_branch)
-	@echo ::set-output name=commit_hash::$(commit_hash)
-	@echo ::set-output name=commit_timestamp::$(commit_timestamp)
+	@echo version=$(VERSION)
+	@echo version_strategy=$(version_strategy)
+	@echo git_tag=$(git_tag)
+	@echo git_branch=$(git_branch)
+	@echo commit_hash=$(commit_hash)
+	@echo commit_timestamp=$(commit_timestamp)
 
 gen:
 	@true
@@ -147,6 +185,9 @@ $(OUTBIN): .go/$(OUTBIN).stamp
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
 	    $(BUILD_IMAGE)                                          \
 	    /bin/bash -c "                                          \
+	        PRODUCT_OWNER_NAME=$(PRODUCT_OWNER_NAME)            \
+	        PRODUCT_NAME=$(PRODUCT_NAME)                        \
+	        ENFORCE_LICENSE=$(ENFORCE_LICENSE)                  \
 	        ARCH=$(ARCH)                                        \
 	        OS=$(OS)                                            \
 	        VERSION=$(VERSION)                                  \
@@ -173,6 +214,41 @@ else
 endif
 endif
 	@echo
+
+# Used to track state in hidden files.
+DOTFILE_IMAGE    = $(subst /,_,$(IMAGE))-$(TAG)
+
+container: bin/.container-$(DOTFILE_IMAGE)-PROD bin/.container-$(DOTFILE_IMAGE)-DBG
+ifeq (,$(SRC_REG))
+bin/.container-$(DOTFILE_IMAGE)-%: bin/$(BIN)-$(OS)-$(ARCH) $(DOCKERFILE_%)
+	@echo "container: $(IMAGE):$(TAG_$*)"
+	@sed                                    \
+		-e 's|{ARG_BIN}|$(BIN)|g'           \
+		-e 's|{ARG_ARCH}|$(ARCH)|g'         \
+		-e 's|{ARG_OS}|$(OS)|g'             \
+		-e 's|{ARG_FROM}|$(BASEIMAGE_$*)|g' \
+		$(DOCKERFILE_$*) > bin/.dockerfile-$*-$(OS)_$(ARCH)
+	@docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(IMAGE):$(TAG_$*) -f bin/.dockerfile-$*-$(OS)_$(ARCH) .
+	@docker images -q $(IMAGE):$(TAG_$*) > $@
+	@echo
+else
+bin/.container-$(DOTFILE_IMAGE)-%:
+	@echo "container: $(IMAGE):$(TAG_$*)"
+	@docker tag $(SRC_REG)/$(BIN):$(TAG_$*) $(IMAGE):$(TAG_$*)
+	@echo
+endif
+
+push: bin/.push-$(DOTFILE_IMAGE)-PROD bin/.push-$(DOTFILE_IMAGE)-DBG
+bin/.push-$(DOTFILE_IMAGE)-%: bin/.container-$(DOTFILE_IMAGE)-%
+	@docker push $(IMAGE):$(TAG_$*)
+	@echo "pushed: $(IMAGE):$(TAG_$*)"
+	@echo
+
+.PHONY: docker-manifest
+docker-manifest: docker-manifest-PROD docker-manifest-DBG
+docker-manifest-%:
+	docker manifest create -a $(IMAGE):$(VERSION_$*) $(foreach PLATFORM,$(DOCKER_PLATFORMS),$(IMAGE):$(VERSION_$*)_$(subst /,_,$(PLATFORM)))
+	docker manifest push $(IMAGE):$(VERSION_$*)
 
 .PHONY: test
 test: unit-tests
@@ -213,24 +289,53 @@ lint: $(BUILD_DIRS)
 	    -v $$(pwd)/.go/cache:/.cache                            \
 	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
-	    --env GO111MODULE=on                                    \
 	    --env GOFLAGS="-mod=vendor"                             \
 	    $(BUILD_IMAGE)                                          \
-	    golangci-lint run --enable $(ADDTL_LINTERS) --deadline=10m --skip-files="generated.*\.go$\" --skip-dirs-use-default
+	    golangci-lint run --enable $(ADDTL_LINTERS) --timeout=10m --skip-files="generated.*\.go$\" --skip-dirs-use-default --skip-dirs=client,vendor
 
 $(BUILD_DIRS):
 	@mkdir -p $@
 
+KUBE_NAMESPACE    ?= kubeops
+REGISTRY_SECRET   ?=
+IMAGE_PULL_POLICY	?= IfNotPresent
+
+ifeq ($(strip $(REGISTRY_SECRET)),)
+	IMAGE_PULL_SECRETS =
+else
+	IMAGE_PULL_SECRETS = --set imagePullSecrets[0].name=$(REGISTRY_SECRET)
+endif
+
+.PHONY: install
+install:
+	@cd ../installer; \
+	kubectl create ns $(KUBE_NAMESPACE) || true; \
+	kubectl label ns $(KUBE_NAMESPACE) pod-security.kubernetes.io/enforce=restricted; \
+	helm upgrade -i cluster-importer charts/cluster-importer --wait \
+		--namespace=$(KUBE_NAMESPACE) --create-namespace \
+		--set image.tag=$(TAG_PROD) \
+		--set imagePullPolicy=$(IMAGE_PULL_POLICY) \
+		$(IMAGE_PULL_SECRETS);
+
+.PHONY: uninstall
+uninstall:
+	@cd ../installer; \
+	helm uninstall cluster-importer --namespace=$(KUBE_NAMESPACE) || true
+
+.PHONY: purge
+purge: uninstall
+	@true
+
 .PHONY: dev
-dev: gen fmt build
+dev: gen fmt push
 
 .PHONY: verify
 verify: verify-gen verify-modules
 
 .PHONY: verify-modules
 verify-modules:
-	GO111MODULE=on go mod tidy
-	GO111MODULE=on go mod vendor
+	go mod tidy
+	go mod vendor
 	@if !(git diff --exit-code HEAD); then \
 		echo "go module files are out of date"; exit 1; \
 	fi
@@ -238,7 +343,7 @@ verify-modules:
 .PHONY: verify-gen
 verify-gen: gen fmt
 	@if !(git diff --exit-code HEAD); then \
-		echo "files are out of date, run make gen fmt"; exit 1; \
+		echo "generated files are out of date, run make gen fmt"; exit 1; \
 	fi
 
 .PHONY: add-license
@@ -252,11 +357,11 @@ add-license:
 		--env HTTP_PROXY=$(HTTP_PROXY)                   \
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
 		$(BUILD_IMAGE)                                   \
-		ltag -t "./hack/license" --excludes "vendor contrib image-scripts workspace" -v
+		ltag -t "./hack/license" --excludes "vendor contrib bin" -v
 
 .PHONY: check-license
 check-license:
-	@echo "Checking files for license header"
+	@echo "Checking files have proper license header"
 	@docker run --rm 	                                 \
 		-u $$(id -u):$$(id -g)                           \
 		-v /tmp:/.cache                                  \
@@ -265,7 +370,7 @@ check-license:
 		--env HTTP_PROXY=$(HTTP_PROXY)                   \
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
 		$(BUILD_IMAGE)                                   \
-		ltag -t "./hack/license" --excludes "vendor contrib image-scripts workspace" --check -v
+		ltag -t "./hack/license" --excludes "vendor contrib bin" --check -v
 
 .PHONY: ci
 ci: verify check-license lint build unit-tests #cover
@@ -280,7 +385,7 @@ qa:
 		echo "Are you trying to 'release' binaries to prod?"; \
 		exit 1;                                               \
 	fi
-	@$(MAKE) clean all-build --no-print-directory
+	@$(MAKE) all-push docker-manifest --no-print-directory
 
 .PHONY: release
 release:
@@ -292,8 +397,20 @@ release:
 		echo "apply tag to release binaries and/or docker images."; \
 		exit 1;                                                     \
 	fi
-	@$(MAKE) clean all-build --no-print-directory
+	@$(MAKE) all-push docker-manifest --no-print-directory
 
 .PHONY: clean
 clean:
 	rm -rf .go bin
+
+.PHONY: push-to-kind
+push-to-kind: container
+	@echo "Loading docker image into kind cluster...."
+	@kind load docker-image $(IMAGE):$(TAG_PROD)
+	@echo "Image has been pushed successfully into kind cluster."
+
+.PHONY: deploy-to-kind
+deploy-to-kind: push-to-kind install
+
+.PHONY: deploy
+deploy: uninstall push install
