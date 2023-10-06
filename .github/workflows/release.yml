@@ -55,7 +55,7 @@ jobs:
           APPSCODE_ENV: prod
         run: |
           docker login ghcr.io --username ${USERNAME} --password ${DOCKER_TOKEN}
-          make release
+          make release COMPRESS=yes
 
       - name: Release
         uses: softprops/action-gh-release@v1
@@ -65,7 +65,6 @@ jobs:
             bin/ace-darwin-amd64.tar.gz
             bin/ace-darwin-arm64.tar.gz
             bin/ace-linux-amd64.tar.gz
-            bin/ace-linux-arm.tar.gz
             bin/ace-linux-arm64.tar.gz
             bin/ace-windows-amd64.zip
             bin/ace-checksums.txt
