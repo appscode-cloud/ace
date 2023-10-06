@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"sync"
 
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
@@ -53,7 +53,6 @@ func newCmdReconfigure(f *config.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the cluster to get")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "install-fluxcd", true, "Specify whether to install FluxCD or not (default true).")
-	cmd.Flags().BoolVar(&opts.Components.LicenseServer, "install-license-server", true, "Specify whether to install license-server or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Install all features")
 	return cmd
 }

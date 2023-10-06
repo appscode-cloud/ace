@@ -21,8 +21,8 @@ import (
 	"os"
 	"sync"
 
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/printer"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/rs/xid"
@@ -66,7 +66,6 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.BasicInfo.DisplayName, "display-name", "", "Display name of the cluster")
 	cmd.Flags().StringVar(&opts.BasicInfo.Name, "name", "", "Unique name across all imported clusters of all provider")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "install-fluxcd", true, "Specify whether to install FluxCD or not (default true).")
-	cmd.Flags().BoolVar(&opts.Components.LicenseServer, "install-license-server", true, "Specify whether to install license-server or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Install all features")
 
 	return cmd

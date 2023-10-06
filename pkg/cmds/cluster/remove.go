@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"sync"
 
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/printer"
 	ace "go.bytebuilders.dev/client"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
@@ -53,7 +53,6 @@ func newCmdRemove(f *config.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the cluster to get")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "remove-fluxcd", true, "Specify whether to remove FluxCD or not (default true).")
-	cmd.Flags().BoolVar(&opts.Components.LicenseServer, "remove-license-server", true, "Specify whether to remove license server or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Remove all features")
 	return cmd
 }

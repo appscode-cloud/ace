@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/config"
 
 	"github.com/spf13/cobra"
 )

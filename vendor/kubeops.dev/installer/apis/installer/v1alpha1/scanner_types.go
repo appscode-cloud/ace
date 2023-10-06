@@ -47,13 +47,14 @@ type ScannerSpec struct {
 	//+optional
 	NameOverride string `json:"nameOverride"`
 	//+optional
-	FullnameOverride string    `json:"fullnameOverride"`
-	ReplicaCount     int32     `json:"replicaCount"`
-	RegistryFQDN     string    `json:"registryFQDN"`
-	App              Container `json:"app"`
-	Etcd             Container `json:"etcd"`
-	Cacher           Container `json:"cacher"`
-	ImagePullPolicy  string    `json:"imagePullPolicy"`
+	FullnameOverride string          `json:"fullnameOverride"`
+	ReplicaCount     int32           `json:"replicaCount"`
+	RegistryFQDN     string          `json:"registryFQDN"`
+	App              Container       `json:"app"`
+	Etcd             EtcdContainer   `json:"etcd"`
+	Kine             Container       `json:"kine"`
+	Cacher           CacherContainer `json:"cacher"`
+	ImagePullPolicy  string          `json:"imagePullPolicy"`
 	//+optional
 	ImagePullSecrets []string `json:"imagePullSecrets"`
 	//+optional
@@ -75,17 +76,27 @@ type ScannerSpec struct {
 	// PodSecurityContext holds pod-level security attributes and common container settings.
 	// Optional: Defaults to empty.  See type description for default values of each field.
 	// +optional
-	PodSecurityContext *core.PodSecurityContext  `json:"podSecurityContext"`
-	StorageClass       core.LocalObjectReference `json:"storageClass"`
-	Persistence        Persistence               `json:"persistence"`
-	ServiceAccount     ServiceAccountSpec        `json:"serviceAccount"`
-	Apiserver          ApiserverSpec             `json:"apiserver"`
-	Monitoring         Monitoring                `json:"monitoring"`
-	Dashboard          GrafanaDashboard          `json:"dashboard"`
-	Grafana            ObjectReference           `json:"grafana"`
-	Nats               ScannerNATS               `json:"nats"`
+	PodSecurityContext *core.PodSecurityContext `json:"podSecurityContext"`
+	StorageClass       LocalObjectReference     `json:"storageClass"`
+	Persistence        Persistence              `json:"persistence"`
+	ServiceAccount     ServiceAccountSpec       `json:"serviceAccount"`
+	Apiserver          ScannerserverSpec        `json:"apiserver"`
+	Monitoring         Monitoring               `json:"monitoring"`
+	Dashboard          GrafanaDashboard         `json:"dashboard"`
+	Grafana            ObjectReference          `json:"grafana"`
+	Nats               ScannerNATS              `json:"nats"`
 	// +optional
 	License string `json:"license"`
+
+	// +optional
+	ScanRequestTTLAfterFinished metav1.Duration  `json:"scanRequestTTLAfterFinished"`
+	ScanReportTTLAfterOutdated  metav1.Duration  `json:"scanReportTTLAfterOutdated"`
+	Workspace                   ScannerWorkspace `json:"workspace"`
+}
+
+type ScannerserverSpec struct {
+	ApiserverSpec `json:",inline"`
+	DB            ApiserverDB `json:"db"`
 }
 
 type GrafanaDashboard struct {
@@ -100,9 +111,18 @@ type DashboardTemplatize struct {
 	Datasource bool `json:"datasource"`
 }
 
+type LocalObjectReference struct {
+	Name string `json:"name"`
+}
+
 type ObjectReference struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
+}
+
+type EtcdContainer struct {
+	Container    `json:",inline,omitempty"`
+	ServingCerts `json:"servingCerts"`
 }
 
 type CacherContainer struct {
@@ -123,6 +143,10 @@ type NatsAuth struct {
 type ScannerNATS struct {
 	Addr string   `json:"addr"`
 	Auth NatsAuth `json:"auth"`
+}
+
+type ScannerWorkspace struct {
+	Namespace string `json:"namespace"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

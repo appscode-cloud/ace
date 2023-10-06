@@ -17,8 +17,8 @@ limitations under the License.
 package cluster
 
 import (
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/printer"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 
 	"github.com/spf13/cobra"

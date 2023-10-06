@@ -19,8 +19,8 @@ package cluster
 import (
 	"fmt"
 
-	"go.bytebuilders.dev/ace-cli/pkg/config"
-	"go.bytebuilders.dev/ace-cli/pkg/printer"
+	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/printer"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 

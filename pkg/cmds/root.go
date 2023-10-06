@@ -21,10 +21,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"go.bytebuilders.dev/ace-cli/pkg/cmds/auth"
-	"go.bytebuilders.dev/ace-cli/pkg/cmds/cluster"
-	cmdconfig "go.bytebuilders.dev/ace-cli/pkg/cmds/config"
-	"go.bytebuilders.dev/ace-cli/pkg/config"
+	"go.bytebuilders.dev/cli/pkg/cmds/auth"
+	"go.bytebuilders.dev/cli/pkg/cmds/cluster"
+	cmdconfig "go.bytebuilders.dev/cli/pkg/cmds/config"
+	"go.bytebuilders.dev/cli/pkg/config"
 	ace "go.bytebuilders.dev/client"
 
 	"github.com/spf13/cobra"
