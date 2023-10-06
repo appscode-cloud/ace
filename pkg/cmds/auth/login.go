@@ -47,6 +47,8 @@ func newCmdLogin() *cobra.Command {
 	cmd.Flags().StringVar(&cred.Username, "username", "", "Name of user to login")
 	cmd.Flags().StringVar(&cred.Password, "password", "", "Password to use to log in")
 
+	cmd.Flags().StringVar(&AccessToken, "access-token", "", "Access token to call API")
+
 	return cmd
 }
 
@@ -56,6 +58,13 @@ func login(cred v1alpha1.BasicAuth) error {
 		return err
 	}
 	client := ace.NewClient(ctx.Endpoint)
+
+	if AccessToken != "" {
+		if err = SetToken(AccessToken); err != nil {
+			return err
+		}
+		return nil
+	}
 
 	if cred.Username == "" {
 		cred.Username = os.Getenv(BB_USERNAME)

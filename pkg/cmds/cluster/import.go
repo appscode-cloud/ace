@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// 0f186757d64c20826ca432c75e4d2b53c8a1a75e
 func newCmdImport(f *config.Factory) *cobra.Command {
 	opts := clustermodel.ImportOptions{}
 	var kubeConfigPath string
@@ -67,7 +68,6 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.BasicInfo.Name, "name", "", "Unique name across all imported clusters of all provider")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "install-fluxcd", true, "Specify whether to install FluxCD or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Install all features")
-
 	return cmd
 }
 

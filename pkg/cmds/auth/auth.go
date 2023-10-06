@@ -31,6 +31,7 @@ func NewCmdAuth() *cobra.Command {
 	}
 	cmd.AddCommand(newCmdLogin())
 	cmd.AddCommand(newCmdLogout())
+
 	return cmd
 }
 
@@ -42,6 +43,8 @@ const (
 	csrfCookie    = "_csrf"
 	sessionCookie = "i_like_bytebuilders"
 )
+
+var AccessToken string
 
 func GetBasicAuthCredFromEnv() *v1alpha1.BasicAuth {
 	user := os.Getenv(BB_USERNAME)
