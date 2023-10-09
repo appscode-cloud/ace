@@ -29,7 +29,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// 0f186757d64c20826ca432c75e4d2b53c8a1a75e
 func newCmdImport(f *config.Factory) *cobra.Command {
 	opts := clustermodel.ImportOptions{}
 	var kubeConfigPath string

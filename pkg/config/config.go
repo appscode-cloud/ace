@@ -180,9 +180,9 @@ func (cfg *Config) save() error {
 }
 
 func getConfigFilepath() (string, error) {
-	configDir := os.Getenv(ACECONFIG)
-	if configDir != "" {
-		return configDir, nil
+	configFile := os.Getenv(ACECONFIG)
+	if configFile != "" {
+		return configFile, nil
 	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
