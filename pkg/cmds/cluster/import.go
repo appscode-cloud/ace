@@ -19,6 +19,7 @@ package cluster
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"go.bytebuilders.dev/cli/pkg/config"
@@ -31,6 +32,7 @@ import (
 
 func newCmdImport(f *config.Factory) *cobra.Command {
 	opts := clustermodel.ImportOptions{}
+	var featureSet map[string]string
 	var kubeConfigPath string
 	cmd := &cobra.Command{
 		Use:               "import",
@@ -44,9 +46,8 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 				}
 				opts.Provider.KubeConfig = string(data)
 			}
-			if !opts.Components.AllFeatures {
-				opts.Components.FeatureSets = defaultFeatureSet
-			}
+
+			opts.Components.FeatureSets = getFeatureSetsInfo(featureSet)
 
 			err := importCluster(f, opts)
 			if err != nil {
@@ -67,6 +68,7 @@ func newCmdImport(f *config.Factory) *cobra.Command {
 	cmd.Flags().StringVar(&opts.BasicInfo.Name, "name", "", "Unique name across all imported clusters of all provider")
 	cmd.Flags().BoolVar(&opts.Components.FluxCD, "install-fluxcd", true, "Specify whether to install FluxCD or not (default true).")
 	cmd.Flags().BoolVar(&opts.Components.AllFeatures, "all-features", false, "Install all features")
+	cmd.Flags().StringToStringVar(&featureSet, "featureset", featureSet, "List of features")
 	return cmd
 }
 
@@ -101,4 +103,22 @@ func importCluster(f *config.Factory, opts clustermodel.ImportOptions) error {
 	wg.Wait()
 
 	return nil
+}
+
+func getFeatureSetsInfo(featureSets map[string]string) []clustermodel.FeatureSet {
+	var desiredFeatureSets []clustermodel.FeatureSet
+	if len(featureSets) == 0 {
+		return defaultFeatureSet
+	}
+
+	for key, val := range featureSets {
+		featureSet := clustermodel.FeatureSet{
+			Name:     key,
+			Features: strings.Split(val, ","),
+		}
+
+		desiredFeatureSets = append(desiredFeatureSets, featureSet)
+	}
+
+	return desiredFeatureSets
 }
