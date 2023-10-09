@@ -63,6 +63,7 @@ func reconfigureCluster(f *config.Factory, opts clustermodel.ReconfigureOptions)
 	if err != nil {
 		return err
 	}
+
 	nc, err := c.NewNatsConnection("ace-cli")
 	if err != nil {
 		return err

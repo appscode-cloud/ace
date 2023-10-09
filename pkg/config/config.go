@@ -28,6 +28,7 @@ import (
 
 const (
 	configVersion = "v1"
+	ACECONFIG     = "ACECONFIG"
 )
 
 var (
@@ -179,6 +180,10 @@ func (cfg *Config) save() error {
 }
 
 func getConfigFilepath() (string, error) {
+	configFile := os.Getenv(ACECONFIG)
+	if configFile != "" {
+		return configFile, nil
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err

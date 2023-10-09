@@ -44,8 +44,10 @@ func newCmdLogin() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&cred.Username, "username", "", "Name of user to login")
-	cmd.Flags().StringVar(&cred.Password, "password", "", "Password to use to log in")
+	cmd.Flags().StringVar(&AccessToken, "token", os.Getenv(ACE_TOKEN), "Access token to call API")
+
+	cmd.Flags().StringVar(&cred.Username, "username", os.Getenv(ACE_USERNAME), "Name of user to login")
+	cmd.Flags().StringVar(&cred.Password, "password", os.Getenv(ACE_PASSWORD), "Password to use to log in")
 
 	return cmd
 }
@@ -55,17 +57,16 @@ func login(cred v1alpha1.BasicAuth) error {
 	if err != nil {
 		return err
 	}
-	client := ace.NewClient(ctx.Endpoint)
 
-	if cred.Username == "" {
-		cred.Username = os.Getenv(BB_USERNAME)
+	if AccessToken != "" {
+		ctx.Token = AccessToken
+		return config.SetContext(*ctx)
 	}
-	if cred.Password == "" {
-		cred.Password = os.Getenv(BB_PASSWORD)
-	}
+
 	if cred.Username == "" || cred.Password == "" {
 		return fmt.Errorf("missing credentials. Please provide both username and password")
 	}
+	client := ace.NewClient(ctx.Endpoint)
 	cookies, err := client.Signin(ace.SignInParams{UserName: cred.Username, Password: cred.Password})
 	if err != nil {
 		return err

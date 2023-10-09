@@ -46,7 +46,6 @@ func newCmdList(f *config.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&listOptions.Provider, "provider", "", "List cluster only for this provider")
-
 	return cmd
 }
 
@@ -55,6 +54,7 @@ func listClusters(f *config.Factory, opts clustermodel.ListOptions) (*v1alpha1.C
 	if err != nil {
 		return nil, err
 	}
+
 	clusters, err := c.ListClusters(opts)
 	if err != nil {
 		return nil, err

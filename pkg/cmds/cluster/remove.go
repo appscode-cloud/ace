@@ -63,6 +63,7 @@ func removeCluster(f *config.Factory, opts clustermodel.RemovalOptions) error {
 	if err != nil {
 		return err
 	}
+
 	nc, err := c.NewNatsConnection("ace-cli")
 	if err != nil {
 		return err
