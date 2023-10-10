@@ -26,6 +26,7 @@ import (
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 
 	"github.com/spf13/cobra"
+	rsapi "kmodules.xyz/resource-metadata/apis/meta/v1alpha1"
 )
 
 func newCmdCheck(f *config.Factory) *cobra.Command {
@@ -47,7 +48,7 @@ func newCmdCheck(f *config.Factory) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to check cluster existence. Reason: %w", err)
 			}
-			if cluster.Status.Phase == v1alpha1.ClusterPhaseNotImported {
+			if cluster.Status.Phase == rsapi.ClusterPhaseNotImported {
 				fmt.Println("Cluster hasn't been imported yet.")
 				return nil
 			}

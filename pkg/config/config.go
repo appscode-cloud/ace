@@ -39,16 +39,16 @@ var (
 var ErrContextNotFound = errors.New("context does not exist")
 
 type Config struct {
-	Version        string    `yaml:"version,omitempty"`
-	CurrentContext string    `yaml:"currentContext,omitempty"`
-	Contexts       []Context `yaml:"contexts,omitempty"`
+	Version        string    `json:"version,omitempty"`
+	CurrentContext string    `json:"current-context,omitempty"`
+	Contexts       []Context `json:"contexts,omitempty"`
 }
 
 type Context struct {
-	Name     string        `yaml:"name"`
-	Endpoint string        `yaml:"endpoint,omitempty"`
-	Token    string        `yaml:"token,omitempty"`
-	Cookies  []http.Cookie `yaml:"cookies,omitempty"`
+	Name     string        `json:"name"`
+	Endpoint string        `json:"endpoint,omitempty"`
+	Token    string        `json:"token,omitempty"`
+	Cookies  []http.Cookie `json:"cookies,omitempty"`
 }
 
 func ReadConfig() (Config, error) {

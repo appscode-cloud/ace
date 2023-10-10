@@ -22,7 +22,7 @@ import (
 	"go.bytebuilders.dev/cli/pkg/config"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 func newCmdView() *cobra.Command {
