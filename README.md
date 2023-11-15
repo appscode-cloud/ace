@@ -1,2 +1,3 @@
-# ace-cli
-A CLI to manipulate ACE (AppsCode Container Engine) resources
+# ace
+
+[ACE(AppsCode Container Engine)](https://selfhost.appscode.com/) CLI
