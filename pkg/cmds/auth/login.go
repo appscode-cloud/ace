@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"os"
 
-	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/ace/pkg/config"
 	ace "go.bytebuilders.dev/client"
 
 	"github.com/spf13/cobra"

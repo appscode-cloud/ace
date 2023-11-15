@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/ace/pkg/config"
 	ace "go.bytebuilders.dev/client"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"

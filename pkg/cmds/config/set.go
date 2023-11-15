@@ -19,7 +19,7 @@ package config
 import (
 	"fmt"
 
-	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/ace/pkg/config"
 
 	"github.com/spf13/cobra"
 )

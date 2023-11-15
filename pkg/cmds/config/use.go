@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	"go.bytebuilders.dev/cli/pkg/config"
+	"go.bytebuilders.dev/ace/pkg/config"
 
 	"github.com/spf13/cobra"
 )

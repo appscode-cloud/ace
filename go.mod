@@ -1,4 +1,4 @@
-module go.bytebuilders.dev/cli
+module go.bytebuilders.dev/ace
 
 go 1.18
 

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"go.bytebuilders.dev/cli/pkg/config"
-	"go.bytebuilders.dev/cli/pkg/printer"
+	"go.bytebuilders.dev/ace/pkg/config"
+	"go.bytebuilders.dev/ace/pkg/printer"
 	clustermodel "go.bytebuilders.dev/resource-model/apis/cluster"
 	"go.bytebuilders.dev/resource-model/apis/cluster/v1alpha1"
 

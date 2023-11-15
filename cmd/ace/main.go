@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"go.bytebuilders.dev/cli/pkg/cmds"
+	"go.bytebuilders.dev/ace/pkg/cmds"
 
 	"gomodules.xyz/logs"
 	"k8s.io/klog/v2"
