@@ -22,6 +22,7 @@ import (
 	"syscall"
 
 	"go.bytebuilders.dev/ace/pkg/cmds/auth"
+	"go.bytebuilders.dev/ace/pkg/cmds/cloud_swap"
 	"go.bytebuilders.dev/ace/pkg/cmds/cluster"
 	cmdconfig "go.bytebuilders.dev/ace/pkg/cmds/config"
 	"go.bytebuilders.dev/ace/pkg/config"
@@ -48,6 +49,8 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(cmdconfig.NewCmdConfig())
 	rootCmd.AddCommand(cluster.NewCmdCluster(f))
 	rootCmd.AddCommand(auth.NewCmdAuth())
+
+	rootCmd.AddCommand(cloud_swap.NewCmdCloudSwap())
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdCompletion())
