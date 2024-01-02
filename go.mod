@@ -10,15 +10,15 @@ require (
 	github.com/rs/xid v1.5.0
 	github.com/spf13/cobra v1.7.0
 	go.bytebuilders.dev/client v0.0.2
-	go.bytebuilders.dev/resource-model v0.0.9-0.20231009113459-4b4bcb480b9b
+	go.bytebuilders.dev/resource-model v0.0.9
 	gocloud.dev v0.26.0
 	gomodules.xyz/blobfs v0.1.14
 	gomodules.xyz/logs v0.0.7
 	gomodules.xyz/x v0.0.15
 	k8s.io/client-go v0.25.3
 	k8s.io/klog/v2 v2.90.1
-	kmodules.xyz/resource-metadata v0.17.39-0.20231112084106-617f472d1f65
-	kubeops.dev/installer v0.0.0-20231106121919-92d8a35b0c8a
+	kmodules.xyz/resource-metadata v0.17.44
+	kubeops.dev/installer v0.0.0-20231227201139-5e6820640a3c
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -143,7 +143,7 @@ require (
 	google.golang.org/genproto v0.0.0-20230731193218-e0aa005b6bdf // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230731193218-e0aa005b6bdf // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230731193218-e0aa005b6bdf // indirect
-	google.golang.org/grpc v1.57.0 // indirect
+	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -155,7 +155,7 @@ require (
 	k8s.io/apimachinery v0.25.4 // indirect
 	k8s.io/kube-openapi v0.0.0-20221207184640-f3cff1453715 // indirect
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448 // indirect
-	kmodules.xyz/client-go v0.25.40 // indirect
+	kmodules.xyz/client-go v0.25.44 // indirect
 	kmodules.xyz/go-containerregistry v0.0.11 // indirect
 	kmodules.xyz/offshoot-api v0.25.0 // indirect
 	kmodules.xyz/resource-metrics v0.25.7 // indirect

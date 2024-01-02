@@ -4,9 +4,9 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: bytebuilders
-  name: cloudproviders.cloud.bytebuilders.dev
+  name: cloudproviders.cloud.appscode.com
 spec:
-  group: cloud.bytebuilders.dev
+  group: cloud.appscode.com
   names:
     categories:
     - cloud

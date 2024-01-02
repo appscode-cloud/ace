@@ -4,9 +4,9 @@ metadata:
   creationTimestamp: null
   labels:
     app.kubernetes.io/name: bytebuilders
-  name: clusterauthinfotemplates.cluster.bytebuilders.dev
+  name: clusterauthinfotemplates.cluster.appscode.com
 spec:
-  group: cluster.bytebuilders.dev
+  group: cluster.appscode.com
   names:
     categories:
     - kubernetes
