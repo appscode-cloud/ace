@@ -71,10 +71,10 @@ ace cloud-swap --src-bucket-url="gs://<google-bucket-name>" \
 		},
 	}
 
-	cmd.Flags().StringVar(&ms.endpoint, "minio.endpoint", "", "MinIO storage endpoint")
-	cmd.Flags().StringVar(&ms.bucket, "minio.bucket", "", "MinIO storage bucket name")
-	cmd.Flags().StringVar(&ms.accessID, "minio.access-id", "", "ACCESS_KEY_ID for MinIO storage")
-	cmd.Flags().StringVar(&ms.secretKey, "minio.secret-key", "", "SECRET_ACCESS_KEY for MinIO storage")
+	cmd.Flags().StringVar(&ms.endpoint, "s3proxy.endpoint", "", "S3proxy storage endpoint")
+	cmd.Flags().StringVar(&ms.bucket, "s3proxy.bucket", "", "MinIO storage bucket name")
+	cmd.Flags().StringVar(&ms.accessID, "s3proxy.access-id", "", "ACCESS_KEY_ID for MinIO storage")
+	cmd.Flags().StringVar(&ms.secretKey, "s3proxy.secret-key", "", "SECRET_ACCESS_KEY for MinIO storage")
 
 	cmd.Flags().StringVar(&srcBucketURL, "src-bucket-url", "", "Complete source-bucket url with scheme, region, endpoints")
 	cmd.Flags().StringVar(&dstBucketURL, "dst-bucket-url", "", "Complete destination-bucket url with scheme, region, endpoints")
@@ -84,8 +84,8 @@ ace cloud-swap --src-bucket-url="gs://<google-bucket-name>" \
 		log.Fatal(err)
 	}
 
-	cmd.MarkFlagsMutuallyExclusive("minio.endpoint", "src-bucket-url")
-	cmd.MarkFlagsRequiredTogether("minio.endpoint", "minio.bucket", "minio.access-id", "minio.secret-key")
+	cmd.MarkFlagsMutuallyExclusive("s3proxy.endpoint", "src-bucket-url")
+	cmd.MarkFlagsRequiredTogether("s3proxy.endpoint", "minio.bucket", "minio.access-id", "minio.secret-key")
 
 	return cmd
 }
