@@ -80,6 +80,8 @@ type PetsetSpec struct {
 	// +optional
 	Apiserver  PetsetApiserver `json:"apiserver"`
 	Monitoring Monitoring      `json:"monitoring"`
+	// +optional
+	NetworkPolicy NetworkPolicy `json:"networkPolicy"`
 }
 
 type PetsetApiserver struct {
@@ -87,7 +89,6 @@ type PetsetApiserver struct {
 	VersionPriority             int             `json:"versionPriority"`
 	EnableMutatingWebhook       bool            `json:"enableMutatingWebhook"`
 	EnableValidatingWebhook     bool            `json:"enableValidatingWebhook"`
-	Ca                          string          `json:"ca"`
 	BypassValidatingWebhookXray bool            `json:"bypassValidatingWebhookXray"`
 	UseKubeapiserverFqdnForAks  bool            `json:"useKubeapiserverFqdnForAks"`
 	Healthcheck                 HealthcheckSpec `json:"healthcheck"`

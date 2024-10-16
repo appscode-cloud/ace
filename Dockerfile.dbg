@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ghcr.io/appscode/dlv:1.20.1 as build-env
+FROM ghcr.io/appscode/dlv:1.23 as build-env
 
 FROM {ARG_FROM}
 
