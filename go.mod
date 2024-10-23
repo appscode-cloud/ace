@@ -12,6 +12,7 @@ require (
 	github.com/rs/xid v1.6.0
 	github.com/spf13/cobra v1.8.1
 	go.bytebuilders.dev/client v0.0.5-0.20241016221800-418b6e9b556d
+	go.bytebuilders.dev/license-verifier v0.14.3
 	go.bytebuilders.dev/resource-model v0.1.0
 	gocloud.dev v0.36.0
 	gomodules.xyz/blobfs v0.1.14
@@ -41,6 +42,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/PuerkitoBio/purell v1.2.1 // indirect
 	github.com/aws/aws-sdk-go v1.54.15 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.24.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.5.4 // indirect
@@ -170,7 +172,7 @@ require (
 	k8s.io/apimachinery v0.30.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20240703190633-0aa61b46e8c2 // indirect
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
-	kmodules.xyz/client-go v0.30.29 // indirect
+	kmodules.xyz/client-go v0.30.30 // indirect
 	kmodules.xyz/go-containerregistry v0.0.12 // indirect
 	kmodules.xyz/offshoot-api v0.30.1 // indirect
 	kmodules.xyz/resource-metrics v0.30.4 // indirect

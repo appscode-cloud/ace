@@ -18,6 +18,7 @@ package main
 
 import (
 	"go.bytebuilders.dev/ace/pkg/cmds"
+	_ "go.bytebuilders.dev/license-verifier/info"
 
 	"gomodules.xyz/logs"
 	"k8s.io/klog/v2"
