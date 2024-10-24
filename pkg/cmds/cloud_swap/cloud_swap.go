@@ -85,7 +85,7 @@ ace cloud-swap --src-bucket-url="gs://<google-bucket-name>" \
 	}
 
 	cmd.MarkFlagsMutuallyExclusive("s3proxy.endpoint", "src-bucket-url")
-	cmd.MarkFlagsRequiredTogether("s3proxy.endpoint", "minio.bucket", "minio.access-id", "minio.secret-key")
+	// cmd.MarkFlagsRequiredTogether("s3proxy.endpoint", "minio.bucket", "minio.access-id", "minio.secret-key")
 
 	return cmd
 }
