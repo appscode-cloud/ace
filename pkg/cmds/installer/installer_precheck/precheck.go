@@ -2,6 +2,7 @@ package installer_precheck
 
 import (
 	"context"
+	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
@@ -29,12 +30,24 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var allOk = true
+// CheckStatus holds the overall check status and logs.
+type CheckStatus struct {
+	AllOk bool
+	Logs  []string
+}
 
+// LogError records an error message and updates the status.
+func (s *CheckStatus) LogError(message string) {
+	s.AllOk = false
+	s.Logs = append(s.Logs, message)
+	log.Println(message)
+}
+
+// CheckOptions validates the options from the specified path.
 func CheckOptions(optsPath string) (bool, error) {
 	data, err := os.ReadFile(optsPath)
 	if err != nil {
-		return false, fmt.Errorf("failed to read options file. Reason: %w", err)
+		return false, fmt.Errorf("failed to read options file: %w", err)
 	}
 
 	var aceOptions v1alpha1.AceOptionsSpec
@@ -52,91 +65,253 @@ func CheckOptions(optsPath string) (bool, error) {
 		return false, fmt.Errorf("failed to create clientset: %v", err)
 	}
 
-	// 1. verify client-cert and client-key
+	status := CheckStatus{AllOk: true}
+
+	// 1. Verify client-cert and client-key
 	if aceOptions.Registry.Certs.ClientCert != "" && aceOptions.Registry.Certs.ClientKey != "" {
-		if err = checkCertKeyPair(aceOptions.Registry.Certs.ClientCert, aceOptions.Registry.Certs.ClientKey); err != nil {
-			allOk = false
-			log.Printf("failed to verify client-cert and client-key. Reason: %s", err)
+		if err := checkCertKeyPair(aceOptions.Registry.Certs.ClientCert, aceOptions.Registry.Certs.ClientKey); err != nil {
+			status.LogError(fmt.Sprintf("failed to verify client-cert and client-key: %s", err))
 		}
 	}
 
-	// 2. check image pull secret exist
+	// 2. Check image pull secrets and registry credentials
+	checkImagePullSecrets(&status, kc, aceOptions)
+
+	// 3. Check docker registry URL
+	if aceOptions.Registry.Image.Proxies.DockerHub != "" {
+		checkDockerRegistry(aceOptions, &status)
+	}
+
+	// 4. Check kube-apiserver can be detected
+	if aceOptions.InitialSetup.SelfManagement.Import {
+		if err := detectKubeAPIServer(aceOptions, rc); err != nil {
+			status.LogError(fmt.Sprintf("failed to detect kube-apiserver: %s", err))
+		}
+	}
+
+	// 5. Check licenses
+	checkLicenses(aceOptions, kc, &status)
+
+	// 6. Check disabled features
+	checkDisabledFeatures(kc, aceOptions, &status)
+
+	// 7. Check default storage class exists
+	if err := checkDefaultStorageClassExists(kc); err != nil {
+		status.LogError(fmt.Sprintf("failed to get default storage class: %s", err))
+	}
+
+	return status.AllOk, nil
+}
+
+// checkImagePullSecrets verifies that image pull secrets exist.
+func checkImagePullSecrets(status *CheckStatus, kc *kubernetes.Clientset, aceOptions v1alpha1.AceOptionsSpec) {
 	if len(aceOptions.Registry.ImagePullSecrets) > 0 {
 		for _, sec := range aceOptions.Registry.ImagePullSecrets {
 			_, err := kc.CoreV1().Secrets("kubedb").Get(context.Background(), sec, metav1.GetOptions{})
 			if err != nil {
-				allOk = false
 				if kerr.IsNotFound(err) {
-					log.Printf("%s image pull secret not found\n", sec)
+					status.LogError(fmt.Sprintf("%s image pull secret not found", sec))
 				} else {
-					log.Printf("failed to get image pull secret: %s. Reason: %s\n", sec, err)
+					status.LogError(fmt.Sprintf("failed to get image pull secret %s: %s", sec, err))
 				}
 			}
 		}
 
-		// 3. check registry credentials
+		// Check registry credentials
 		_, err := authn.ImageWithDigest(kc, fmt.Sprintf("%s/ace-installer", aceOptions.Registry.Image.Proxies.AppsCode), &k8schain.Options{
 			ImagePullSecrets: aceOptions.Registry.ImagePullSecrets,
 		})
 		if err != nil {
-			allOk = false
-			log.Printf("failed to verify registry credentials. Reason: %s\n", err)
+			status.LogError(fmt.Sprintf("failed to verify registry credentials: %s", err))
 		}
 	}
-
-	// 4. check docker registry has https://
-	if aceOptions.Registry.Image.Proxies.DockerHub != "" {
-		checkDockerRegistry(aceOptions)
-	}
-
-	// 5. check kube-apiserver can be detected
-	if aceOptions.InitialSetup.SelfManagement.Import {
-		if err = detectKubeAPIServer(aceOptions, rc); err != nil {
-			allOk = false
-			log.Printf("failed to detect kube-apiserver. Reason: %s\n", err)
-		}
-	}
-
-	// 6. Check cluster_id provided in options matches the actual cluster id for offline installer
-	checkLicenses(aceOptions, kc)
-
-	// 7. check disable-features already exists in cluster or not
-	checkDisabledFeatures(kc, aceOptions)
-
-	if err = checkDefaultStorageClassExists(kc); err != nil {
-		allOk = false
-		log.Printf("falied to get default storage class. reason: %s", err)
-	}
-
-	return allOk, nil
 }
 
-func checkCertKeyPair(certPEM, keyPEM string) error {
-	block, _ := pem.Decode([]byte(certPEM))
-	if block == nil || block.Type != "CERTIFICATE" {
-		return errors.New("failed to decode certificate PEM block")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
+// checkDockerRegistry verifies the connection to the specified Docker registry.
+func checkDockerRegistry(aceOptions v1alpha1.AceOptionsSpec, status *CheckStatus) {
+	url := "https://" + aceOptions.Registry.Image.Proxies.DockerHub
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("failed to parse certificate: %v", err)
+		status.LogError(fmt.Sprintf("Error making request to Docker registry: %v", err))
+		return
 	}
+	defer resp.Body.Close()
 
-	block, _ = pem.Decode([]byte(keyPEM))
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return errors.New("failed to decode private key PEM block")
+	if resp.TLS == nil || len(resp.TLS.PeerCertificates) == 0 {
+		status.LogError("No TLS connection or no peer certificates.")
 	}
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+}
+
+// checkLicenses verifies the licenses specified in aceOptions.
+func checkLicenses(aceOptions v1alpha1.AceOptionsSpec, kc *kubernetes.Clientset, status *CheckStatus) {
+	ns, err := kc.CoreV1().Namespaces().Get(context.TODO(), "kube-system", metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to parse private key: %v", err)
+		status.LogError(fmt.Sprintf("failed to get kube-system namespace: %s", err))
+		return
 	}
 
-	pubKey, ok := cert.PublicKey.(*rsa.PublicKey)
-	if !ok {
-		return errors.New("certificate public key is not RSA")
+	ca, err := info.LoadLicenseCA()
+	if err != nil {
+		status.LogError(fmt.Sprintf("failed to get license CA: %s", err))
+		return
 	}
 
-	if pubKey.N.Cmp(key.N) != 0 || pubKey.E != key.E {
-		return errors.New("certificate and private key do not match")
+	caCert, err := info.ParseCertificate(ca)
+	if err != nil {
+		status.LogError(fmt.Sprintf("failed to parse license CA: %s", err))
+		return
+	}
+
+	for pro, lic := range aceOptions.Context.Licenses {
+		if _, err := verifier.ParseLicense(verifier.ParserOptions{
+			ClusterUID: string(ns.UID),
+			CACert:     caCert,
+			License:    []byte(lic),
+		}); err != nil {
+			status.LogError(fmt.Sprintf("failed to verify license for product %s: %s", pro, err))
+		}
+	}
+}
+
+// checkDisabledFeatures checks for any disabled features and their existence.
+func checkDisabledFeatures(kc *kubernetes.Clientset, aceOptions v1alpha1.AceOptionsSpec, status *CheckStatus) {
+	features := map[string]func(*kubernetes.Clientset, *CheckStatus){
+		"kubedb":       checkKubeDBExists,
+		"stash":        checkStashExists,
+		"kubestash":    checkKubeStashExists,
+		"cert-manager": checkCertManagerExists,
+	}
+
+	for feature, checkFunc := range features {
+		if modstring.Contains(aceOptions.InitialSetup.SelfManagement.DisableFeatures, feature) {
+			checkFunc(kc, status)
+		}
+	}
+}
+
+// checkDeploymentExists checks if a deployment exists based on a label selector.
+func checkDeploymentExists(kc *kubernetes.Clientset, labelSelector map[string]string) (bool, error) {
+	selector := labels.Set(labelSelector).AsSelector().String()
+
+	deployments, err := kc.AppsV1().Deployments(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return len(deployments.Items) > 0, nil
+}
+
+// checkFeatureExists checks if a specific feature exists.
+func checkFeatureExists(kc *kubernetes.Clientset, featureName string, labels map[string]string, status *CheckStatus) {
+	found, err := checkDeploymentExists(kc, labels)
+	if err != nil {
+		status.LogError(fmt.Sprintf("failed to get %s deployments: %s", featureName, err))
+		return
+	}
+
+	if !found {
+		status.LogError(fmt.Sprintf("%s not found in this cluster", featureName))
+	}
+}
+
+// checkKubeDBExists checks if KubeDB is deployed in the cluster.
+func checkKubeDBExists(kc *kubernetes.Clientset, status *CheckStatus) {
+	kubedbLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/name":       "kubedb-provisioner",
+	}
+	checkFeatureExists(kc, "kubedb", kubedbLabels, status)
+}
+
+// checkStashExists checks if Stash is deployed in the cluster.
+func checkStashExists(kc *kubernetes.Clientset, status *CheckStatus) {
+	stashLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/name":       "stash-enterprise",
+	}
+	checkFeatureExists(kc, "stash", stashLabels, status)
+}
+
+// checkKubeStashExists checks if KubeStash is deployed in the cluster.
+func checkKubeStashExists(kc *kubernetes.Clientset, status *CheckStatus) {
+	kubestashLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/name":       "kubestash",
+	}
+	checkFeatureExists(kc, "kubestash", kubestashLabels, status)
+}
+
+// checkCertManagerExists checks if cert-manager is deployed in the cluster.
+func checkCertManagerExists(kc *kubernetes.Clientset, status *CheckStatus) {
+	certManagerLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/name":       "cert-manager",
+	}
+	checkFeatureExists(kc, "cert-manager", certManagerLabels, status)
+}
+
+// checkDefaultStorageClassExists verifies that a default storage class exists in the cluster.
+func checkDefaultStorageClassExists(kc *kubernetes.Clientset) error {
+	storageClasses, err := kc.StorageV1().StorageClasses().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list storage classes: %w", err)
+	}
+
+	for _, sc := range storageClasses.Items {
+		if sc.Provisioner == "kubernetes.io/no-provisioner" {
+			continue
+		}
+		if sc.Annotations["storageclass.kubernetes.io/is-default-class"] == "true" {
+			return nil
+		}
+	}
+	return errors.New("no default storage class found")
+}
+
+// checkCertKeyPair verifies if the provided client certificate and key pair is valid.
+func checkCertKeyPair(clientCertPath string, clientKeyPath string) error {
+	clientCertPEM, err := os.ReadFile(clientCertPath)
+	if err != nil {
+		return fmt.Errorf("failed to read client certificate: %w", err)
+	}
+
+	clientKeyPEM, err := os.ReadFile(clientKeyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read client key: %w", err)
+	}
+
+	// Decode client certificate
+	certBlock, _ := pem.Decode(clientCertPEM)
+	if certBlock == nil {
+		return errors.New("failed to decode client certificate PEM")
+	}
+
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse client certificate: %w", err)
+	}
+
+	// Decode client key
+	keyBlock, _ := pem.Decode(clientKeyPEM)
+	if keyBlock == nil {
+		return errors.New("failed to decode client key PEM")
+	}
+
+	clientKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	if err != nil {
+		return fmt.Errorf("failed to parse client key: %w", err)
+	}
+
+	// Verify that the public key from the certificate matches the private key
+	if err := cert.CheckSignature(cert.SignatureAlgorithm, cert.RawTBSCertificate, cert.Signature); err != nil {
+		return fmt.Errorf("client certificate signature verification failed: %w", err)
+	}
+
+	// Ensure the client certificate and key are compatible
+	if _, err := rsa.SignPKCS1v15(nil, clientKey, crypto.Hash(cert.SignatureAlgorithm), cert.Signature); err != nil {
+		return errors.New("client certificate and key are not compatible")
 	}
 
 	return nil
@@ -234,164 +409,4 @@ func getIngressIP(kc kubernetes.Interface) (string, error) {
 		}
 	}
 	return "", nil
-}
-
-func checkDockerRegistry(aceOptions v1alpha1.AceOptionsSpec) {
-	url := "https://" + aceOptions.Registry.Image.Proxies.DockerHub
-	client := http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		allOk = false
-		log.Printf("Error creating request: %v", err)
-		return
-	}
-
-	resp, clientErr := client.Do(req)
-	if clientErr != nil {
-		allOk = false
-		log.Printf("Error making request: %v", clientErr)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.TLS == nil || (resp.TLS != nil && len(resp.TLS.PeerCertificates) == 0) {
-		allOk = false
-		log.Printf("No TLS connection or no peer certificates.")
-	}
-}
-
-func checkLicenses(aceOptions v1alpha1.AceOptionsSpec, kc *kubernetes.Clientset) {
-	ns, err := kc.CoreV1().Namespaces().Get(context.TODO(), "kube-system", metav1.GetOptions{})
-	if err != nil {
-		allOk = false
-		log.Printf("failed to get kube-system namespace. Reason: %s", err)
-		return
-	}
-
-	ca, err := info.LoadLicenseCA()
-	if err != nil {
-		allOk = false
-		log.Printf("failed to get license ca. Reason: %s", err)
-		return
-	}
-
-	caCert, err := info.ParseCertificate(ca)
-	if err != nil {
-		allOk = false
-		log.Printf("failed to parse license ca. Reason: %s", err)
-		return
-	}
-
-	for pro, lic := range aceOptions.Context.Licenses {
-		_, err := verifier.ParseLicense(verifier.ParserOptions{
-			ClusterUID: string(ns.UID),
-			CACert:     caCert,
-			License:    []byte(lic),
-		})
-		if err != nil {
-			allOk = false
-			log.Printf("failed to verify license for product: %s. Reason: %s", pro, err)
-		}
-	}
-}
-
-func checkDisabledFeatures(kc *kubernetes.Clientset, aceOptions v1alpha1.AceOptionsSpec) {
-	features := map[string]func(*kubernetes.Clientset){
-		"kubedb":       checkKubeDBExists,
-		"stash":        checkStashExists,
-		"kubestash":    checkKubeStashExists,
-		"cert-manager": checkCertManagerExists,
-	}
-
-	for feature, checkFunc := range features {
-		if modstring.Contains(aceOptions.InitialSetup.SelfManagement.DisableFeatures, feature) {
-			checkFunc(kc)
-		}
-	}
-}
-
-func checkDeploymentExists(kc *kubernetes.Clientset, labelSelector map[string]string) (bool, error) {
-	selector := labels.Set(labelSelector).AsSelector().String()
-
-	deployments, err := kc.AppsV1().Deployments(metav1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil {
-		return false, err
-	}
-
-	return len(deployments.Items) > 0, nil
-}
-
-func checkFeatureExists(kc *kubernetes.Clientset, featureName string, labels map[string]string) {
-	found, err := checkDeploymentExists(kc, labels)
-	if err != nil {
-		allOk = false
-		log.Printf("failed to get %s deployments. Reason: %s\n", featureName, err)
-		return
-	}
-
-	if !found {
-		allOk = false
-		log.Printf("%s not found in this cluster", featureName)
-	}
-}
-
-func checkKubeDBExists(kc *kubernetes.Clientset) {
-	kubedbLabels := map[string]string{
-		"app.kubernetes.io/managed-by": "Helm",
-		"app.kubernetes.io/name":       "kubedb-provisioner",
-	}
-	checkFeatureExists(kc, "kubedb", kubedbLabels)
-}
-
-func checkStashExists(kc *kubernetes.Clientset) {
-	stashLabels := map[string]string{
-		"app.kubernetes.io/managed-by": "Helm",
-		"app.kubernetes.io/name":       "stash-enterprise",
-	}
-	checkFeatureExists(kc, "stash", stashLabels)
-}
-
-func checkKubeStashExists(kc *kubernetes.Clientset) {
-	kubeStashLabels := map[string]string{
-		"app.kubernetes.io/instance":   "kubestash",
-		"app.kubernetes.io/managed-by": "Helm",
-		"app.kubernetes.io/name":       "kubestash-operator",
-	}
-	checkFeatureExists(kc, "kubestash", kubeStashLabels)
-}
-
-func checkCertManagerExists(kc *kubernetes.Clientset) {
-	certManagerLabels := map[string]string{
-		"app.kubernetes.io/instance":  "cert-manager",
-		"app.kubernetes.io/component": "controller",
-		"app.kubernetes.io/name":      "cert-manager",
-	}
-
-	// Check for cert-manager deployment
-	checkFeatureExists(kc, "cert-manager", certManagerLabels)
-
-	// Check for cert-manager webhook deployment
-	webhookLabels := map[string]string{
-		"app.kubernetes.io/instance":  "cert-manager",
-		"app.kubernetes.io/component": "webhook",
-		"app.kubernetes.io/name":      "webhook",
-	}
-	checkFeatureExists(kc, "cert-manager webhook", webhookLabels)
-}
-
-func checkDefaultStorageClassExists(kc *kubernetes.Clientset) error {
-	storageClasses, err := kc.StorageV1().StorageClasses().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, sc := range storageClasses.Items {
-		if val, exists := sc.Annotations["storageclass.kubernetes.io/is-default-class"]; exists && val == "true" {
-			return nil
-		}
-	}
-
-	return errors.New("default storage-class not found")
 }
