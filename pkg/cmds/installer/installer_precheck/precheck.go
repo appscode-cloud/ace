@@ -1,3 +1,19 @@
+/*
+Copyright AppsCode Inc. and Contributors
+
+Licensed under the AppsCode Community License 1.0.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://github.com/appscode/licenses/raw/1.0.0/AppsCode-Community-1.0.0.md
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package installer_precheck
 
 import (
@@ -5,6 +21,7 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -16,6 +33,7 @@ import (
 	"go.bytebuilders.dev/installer/apis/installer/v1alpha1"
 	verifier "go.bytebuilders.dev/license-verifier"
 	"go.bytebuilders.dev/license-verifier/info"
+	configapi "go.bytebuilders.dev/resource-model/apis/config/v1alpha1"
 
 	"github.com/google/go-containerregistry/pkg/authn/k8schain"
 	modstring "gomodules.xyz/x/strings"
@@ -29,6 +47,12 @@ import (
 	"kmodules.xyz/go-containerregistry/authn"
 	"sigs.k8s.io/yaml"
 )
+
+type AceValidateOptions struct {
+	Licenses       map[string]string        `json:"licenses,omitempty"`
+	Registry       v1alpha1.RegistrySpec    `json:"registry,omitempty"`
+	SelfManagement configapi.SelfManagement `json:"selfManagement,omitempty"`
+}
 
 // CheckStatus holds the overall check status and logs.
 type CheckStatus struct {
@@ -50,7 +74,7 @@ func CheckOptions(optsPath string) (bool, error) {
 		return false, fmt.Errorf("failed to read options file: %w", err)
 	}
 
-	var aceOptions v1alpha1.AceOptionsSpec
+	var aceOptions AceValidateOptions
 	if err := yaml.Unmarshal(data, &aceOptions); err != nil {
 		return false, err
 	}
@@ -83,7 +107,7 @@ func CheckOptions(optsPath string) (bool, error) {
 	}
 
 	// 4. Check kube-apiserver can be detected
-	if aceOptions.InitialSetup.SelfManagement.Import {
+	if aceOptions.SelfManagement.Import {
 		if err := detectKubeAPIServer(aceOptions, rc); err != nil {
 			status.LogError(fmt.Sprintf("failed to detect kube-apiserver: %s", err))
 		}
@@ -104,7 +128,7 @@ func CheckOptions(optsPath string) (bool, error) {
 }
 
 // checkImagePullSecrets verifies that image pull secrets exist.
-func checkImagePullSecrets(status *CheckStatus, kc *kubernetes.Clientset, aceOptions v1alpha1.AceOptionsSpec) {
+func checkImagePullSecrets(status *CheckStatus, kc *kubernetes.Clientset, aceOptions AceValidateOptions) {
 	if len(aceOptions.Registry.ImagePullSecrets) > 0 {
 		for _, sec := range aceOptions.Registry.ImagePullSecrets {
 			_, err := kc.CoreV1().Secrets("kubedb").Get(context.Background(), sec, metav1.GetOptions{})
@@ -128,7 +152,7 @@ func checkImagePullSecrets(status *CheckStatus, kc *kubernetes.Clientset, aceOpt
 }
 
 // checkDockerRegistry verifies the connection to the specified Docker registry.
-func checkDockerRegistry(aceOptions v1alpha1.AceOptionsSpec, status *CheckStatus) {
+func checkDockerRegistry(aceOptions AceValidateOptions, status *CheckStatus) {
 	url := "https://" + aceOptions.Registry.Image.Proxies.DockerHub
 	resp, err := http.Get(url)
 	if err != nil {
@@ -143,7 +167,7 @@ func checkDockerRegistry(aceOptions v1alpha1.AceOptionsSpec, status *CheckStatus
 }
 
 // checkLicenses verifies the licenses specified in aceOptions.
-func checkLicenses(aceOptions v1alpha1.AceOptionsSpec, kc *kubernetes.Clientset, status *CheckStatus) {
+func checkLicenses(aceOptions AceValidateOptions, kc *kubernetes.Clientset, status *CheckStatus) {
 	ns, err := kc.CoreV1().Namespaces().Get(context.TODO(), "kube-system", metav1.GetOptions{})
 	if err != nil {
 		status.LogError(fmt.Sprintf("failed to get kube-system namespace: %s", err))
@@ -162,11 +186,16 @@ func checkLicenses(aceOptions v1alpha1.AceOptionsSpec, kc *kubernetes.Clientset,
 		return
 	}
 
-	for pro, lic := range aceOptions.Context.Licenses {
+	for pro, lic := range aceOptions.Licenses {
+		decodedData, err := base64.StdEncoding.DecodeString(lic)
+		if err != nil {
+			status.LogError(fmt.Sprintf("failed to Base64-decode data: %v", err))
+			return
+		}
 		if _, err := verifier.ParseLicense(verifier.ParserOptions{
 			ClusterUID: string(ns.UID),
 			CACert:     caCert,
-			License:    []byte(lic),
+			License:    decodedData,
 		}); err != nil {
 			status.LogError(fmt.Sprintf("failed to verify license for product %s: %s", pro, err))
 		}
@@ -174,7 +203,7 @@ func checkLicenses(aceOptions v1alpha1.AceOptionsSpec, kc *kubernetes.Clientset,
 }
 
 // checkDisabledFeatures checks for any disabled features and their existence.
-func checkDisabledFeatures(kc *kubernetes.Clientset, aceOptions v1alpha1.AceOptionsSpec, status *CheckStatus) {
+func checkDisabledFeatures(kc *kubernetes.Clientset, aceOptions AceValidateOptions, status *CheckStatus) {
 	features := map[string]func(*kubernetes.Clientset, *CheckStatus){
 		"kubedb":       checkKubeDBExists,
 		"stash":        checkStashExists,
@@ -183,7 +212,7 @@ func checkDisabledFeatures(kc *kubernetes.Clientset, aceOptions v1alpha1.AceOpti
 	}
 
 	for feature, checkFunc := range features {
-		if modstring.Contains(aceOptions.InitialSetup.SelfManagement.DisableFeatures, feature) {
+		if modstring.Contains(aceOptions.SelfManagement.DisableFeatures, feature) {
 			checkFunc(kc, status)
 		}
 	}
@@ -317,7 +346,7 @@ func checkCertKeyPair(clientCertPath string, clientKeyPath string) error {
 	return nil
 }
 
-func detectKubeAPIServer(opts v1alpha1.AceOptionsSpec, restConfig *rest.Config) error {
+func detectKubeAPIServer(opts AceValidateOptions, restConfig *rest.Config) error {
 	kc, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return err
@@ -334,8 +363,8 @@ func detectKubeAPIServer(opts v1alpha1.AceOptionsSpec, restConfig *rest.Config) 
 
 		var done bool
 		if strings.Contains(sv.GitVersion, "+k3s") {
-			if len(opts.Infra.DNS.TargetIPs) > 0 {
-				restConfig.Host = fmt.Sprintf("https://%s:6443", opts.Infra.DNS.TargetIPs[0])
+			if len(opts.SelfManagement.TargetIPs) > 0 {
+				restConfig.Host = fmt.Sprintf("https://%s:6443", opts.SelfManagement.TargetIPs[0])
 				done = true
 				log.Printf("ace cluster kube-apiserver address: %s, source: selfManagement.TargetIPs[0]\n", restConfig.Host)
 			} else {
