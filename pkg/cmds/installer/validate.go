@@ -17,17 +17,35 @@ limitations under the License.
 package installer
 
 import (
+	"fmt"
+
+	"go.bytebuilders.dev/ace/pkg/cmds/installer/installer_precheck"
+
 	"github.com/spf13/cobra"
 )
 
 func newCmdValidate() *cobra.Command {
+	var optionsPath string
 	cmd := &cobra.Command{
 		Use:               "validate",
 		Short:             "Validate installer options",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if optionsPath == "" {
+				return fmt.Errorf("options file missing")
+			}
+			allOK, err := installer_precheck.CheckOptions(optionsPath)
+			if err != nil {
+				return fmt.Errorf("validation failed. Reason: %w", err)
+			}
+
+			if !allOK {
+				return fmt.Errorf("Validation failed due to multiple issues. Please check the details and try again.\n")
+			}
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&optionsPath, "options", "", "Path of the options file")
 	return cmd
 }
